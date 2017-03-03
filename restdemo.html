@@ -6,7 +6,7 @@
 
 <h1>REST Demo (https)</h1>
 Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com/software" target="_new">www.plantronics.com/software</a>
-<p>Note Firefox users: If you get "Error connecting to Spokes." then visit this URL: <a href="https://127.0.0.1:32018/Spokes/DeviceServices/Info" target="_new">https://127.0.0.1:32018/Spokes/DeviceServices/Info</a> and click Advanced > Add Exception... to add a security exception to allow the connection.</p>
+<p>Note Firefox users: If you get "Error connecting to Plantronics Hub." then visit this URL: <a href="https://127.0.0.1:32018/Spokes/DeviceServices/Info" target="_new">https://127.0.0.1:32018/Spokes/DeviceServices/Info</a> and click Advanced > Add Exception... to add a security exception to allow the connection.</p>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script><script type="text/javascript">
 
@@ -2053,7 +2053,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
                     appendLog("Error: Device was null on connecting to Spokes. Is there a Plantronics device connected?");
                 }
             } else {
-                appendLog("Error connecting to Spokes.");
+                appendLog("Error connecting to Plantronics Hub. (Have you installed Plantronics Hub from <a href=\"http://www.plantronics.com/software\" target=\"_new\">www.plantronics.com/software</a>?)");
             }
         });
     }
