@@ -60,7 +60,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
     //Create my object
     function Spokes(url) {
         // set path to default if url is undefined
-        this.Path = (typeof url === 'undefined' || url == null) ? "http://127.0.0.1:32017" : url; //Custom address
+        this.Path = (typeof url === 'undefined' || url == null) ? "https://127.0.0.1:32018" : url; //Custom address
         this.Device = new Device(this.Path);
         this.Plugin = new Plugin(this.Path);
         this.UserPreference = new UserPreference(this.Path);
@@ -2032,7 +2032,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         //checkJquery();
 
         //Create my spokes object
-        spokes = new Spokes("http://127.0.0.1:32017/Spokes");
+        spokes = new Spokes("https://127.0.0.1:32018/Spokes");
 
         // get list of attached devices
         //spokes.Device.deviceList(function (result) {
