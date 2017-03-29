@@ -1,137 +1,133 @@
 <html>
 <head>
-<title>PLTDev Page > REST Demo</title>
+    <title>Plantronics JavaScript Sample</title>
 </head>
-<body>
+<body onload="connectToSpokes()" onbeforeunload="disconnectFromSpokes()">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+    <script type="text/javascript">
 
-<h1>REST Demo (https)</h1>
-Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com/software" target="_new">www.plantronics.com/software</a>
-<p>Note Firefox users: If you get "Error connecting to Plantronics Hub." then visit this URL: <a href="https://127.0.0.1:32018/Spokes/DeviceServices/Info" target="_new">https://127.0.0.1:32018/Spokes/DeviceServices/Info</a> and click Advanced > Add Exception... to add a security exception to allow the connection.</p>
+        //Ensure jquery is loaded
+        if (typeof jQuery === 'undefined')
+            alert("Spokes Error: jQuery must be loaded before spokes Javascript");
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script><script type="text/javascript">
+        //Compresses an array of queue items down to a single number
+        function compressQueueList(queue) {
+            var val = 0;
 
-    //Ensure jquery is loaded
-    if (typeof jQuery === 'undefined')
-        alert("Spokes Error: jQuery must be loaded before spokes Javascript");
+            //If we aren't an array, just return queue
+            if (queue.constructor.toString().indexOf("Array") == -1)
+                return queue;
 
-    //Compresses an array of queue items down to a single number
-    function compressQueueList(queue) {
-        var val = 0;
+            //We have an array, go through it and or everthing together
+            for (var i = 0; i < queue.length; i++)
+                if (typeof (queue[i]) === "number" && queue[i] > 0)
+                    val |= queue[i];
 
-        //If we aren't an array, just return queue
-        if (queue.constructor.toString().indexOf("Array") == -1)
-            return queue;
-
-        //We have an array, go through it and or everthing together
-        for (var i = 0; i < queue.length; i++)
-            if (typeof (queue[i]) === "number" && queue[i] > 0)
-                val |= queue[i];
-
-        return val;
-    }
-
-    //This is an action object which provides callbacks if the server is offline
-    function SpokesAction(callback) {
-        this.Age = 0;
-        this.Callback = callback;
-        this.isValid = true;
-    }
-
-    //Holds a list actions for all objects
-    SpokesAction.Action_List = new Array();
-
-    //Register myself with the allocated list of spokes
-    setInterval(function() {
-        var len = SpokesAction.Action_List.length - 1;
-        for (var i = len; i >= 0; i--) {
-            var action = SpokesAction.Action_List[i];
-            action.Age++;
-            // action.Age++;
-            if (action.Age > 4) {
-                SpokesAction.Action_List.splice(i, 1);
-                //Call the user telling them the request timed out
-                if (action.isValid && typeof (action.Callback) === 'function')
-                    action.Callback(new SpokesResponse({ "Description": "", "Err": { "Description": "No response.  Server appears to be offline.", "Error_Code": 0, "Type": 4 }, "Result": null, "Type": 0, "Type_Name": "Unknown", "isError": true }));
-
-            }
+            return val;
         }
-    }, 2000); //2 seconds on the callback
 
+        //This is an action object which provides callbacks if the server is offline
+        function SpokesAction(callback) {
+            this.Age = 0;
+            this.Callback = callback;
+            this.isValid = true;
+        }
 
-    //Create my object
-    function Spokes(url) {
-        // set path to default if url is undefined
-        this.Path = (typeof url === 'undefined' || url == null) ? "https://127.0.0.1:32018" : url; //Custom address
-        this.Device = new Device(this.Path);
-        this.Plugin = new Plugin(this.Path);
-        this.UserPreference = new UserPreference(this.Path);
-    }
+        //Holds a list actions for all objects
+        SpokesAction.Action_List = new Array();
 
-    //Create my object
-    function Device(path) {
-        this.Path = path;
-        this.Device_Id = "";
-        this.Sess_Id = "";
-        this.isAttached = false;
-    }
+        //Register myself with the allocated list of spokes
+        setInterval(function () {
+            var len = SpokesAction.Action_List.length - 1;
+            for (var i = len; i >= 0; i--) {
+                var action = SpokesAction.Action_List[i];
+                action.Age++;
+                // action.Age++;
+                if (action.Age > 4) {
+                    SpokesAction.Action_List.splice(i, 1);
+                    //Call the user telling them the request timed out
+                    if (action.isValid && typeof (action.Callback) === 'function')
+                        action.Callback(new SpokesResponse({ "Description": "", "Err": { "Description": "No response.  Server appears to be offline.", "Error_Code": 0, "Type": 4 }, "Result": null, "Type": 0, "Type_Name": "Unknown", "isError": true }));
 
-    //Connect to a device
-    Device.prototype.attach = function(uid, callback) {
-        //  //Change the uid to a special value if none was given
-        //if ( callback == undefined && typeof(uid) === "function" )
-        //{
-        //  callback = uid;
-        //  uid = "0123456789"; //Magic uid which tells server to pick first device
-        //}
-
-        //Register the callback
-        var action = new SpokesAction(callback);
-        SpokesAction.Action_List.unshift(action);
-
-        //Register a session
-        local = this;
-        $.getJSON(this.Path + "/DeviceServices/Attach?uid=" + uid + "&callback=?",
-            function(data) {
-                //Create a nice object, and ensure its of the right type
-                var resp = new SpokesResponse(data);
-                if (resp.Type != SpokesResponseType.SessionHash)
-                    resp.isValid = false;
-
-                //Store my session and set that we are attached
-                if (resp.isValid && !resp.isError) {
-                    local.Sess_Id = resp.Result;
-                    local.isAttached = true;
                 }
+            }
+        }, 2000); //2 seconds on the callback
 
-                //Pass my result back to the user
-                action.isValid = false;
-                if (typeof (action.Callback) === 'function')
-                    action.Callback(resp);
-            });
 
-        return true;
-    }
+        //Create my object
+        function Spokes(url) {
+            // set path to default if url is undefined
+            this.Path = (typeof url === 'undefined' || url == null) ? "https://127.0.0.1:32018" : url; //Custom address
+            this.Device = new Device(this.Path);
+            this.Plugin = new Plugin(this.Path);
+            this.UserPreference = new UserPreference(this.Path);
+        }
 
-    //Release my session from a device
-    Device.prototype.release = function(callback) {
-        //Can't release, we aren't attached
-        if (this.isAttached == false)
-            return false;
+        //Create my object
+        function Device(path) {
+            this.Path = path;
+            this.Device_Id = "";
+            this.Sess_Id = "";
+            this.isAttached = false;
+        }
 
-        //Register the callback
-        var action = new SpokesAction(callback);
-        SpokesAction.Action_List.unshift(action);
+        //Connect to a device
+        Device.prototype.attach = function (uid, callback) {
+            //  //Change the uid to a special value if none was given
+            //if ( callback == undefined && typeof(uid) === "function" )
+            //{
+            //  callback = uid;
+            //  uid = "0123456789"; //Magic uid which tells server to pick first device
+            //}
 
-        local = this;
-        //Release a session
-        $.getJSON(this.Path + "/DeviceServices/Release?sess=" + this.Sess_Id + "&callback=?",
-            function(data) {
-                //Create a nice object, and ensure its of the right type
-                var resp = new SpokesResponse(data);
-                if (resp.Type != SpokesResponseType.Bool)
-                    resp.isValid = false;
+            //Register the callback
+            var action = new SpokesAction(callback);
+            SpokesAction.Action_List.unshift(action);
 
-                //Set that we aren't attached anymore, if if this failed
+            //Register a session
+            local = this;
+            $.getJSON(this.Path + "/DeviceServices/Attach?uid=" + uid + "&callback=?",
+                function (data) {
+                    //Create a nice object, and ensure its of the right type
+                    var resp = new SpokesResponse(data);
+                    if (resp.Type != SpokesResponseType.SessionHash)
+                        resp.isValid = false;
+
+                    //Store my session and set that we are attached
+                    if (resp.isValid && !resp.isError) {
+                        local.Sess_Id = resp.Result;
+                        local.isAttached = true;
+                    }
+
+                    //Pass my result back to the user
+                    action.isValid = false;
+                    if (typeof (action.Callback) === 'function')
+                        action.Callback(resp);
+                });
+
+            return true;
+        }
+
+        //Release my session from a device
+        Device.prototype.release = function (callback) {
+            //Can't release, we aren't attached
+            if (this.isAttached == false)
+                return false;
+
+            //Register the callback
+            var action = new SpokesAction(callback);
+            SpokesAction.Action_List.unshift(action);
+
+            local = this;
+            //Release a session
+            $.getJSON(this.Path + "/DeviceServices/Release?sess=" + this.Sess_Id + "&callback=?",
+                function (data) {
+                    //Create a nice object, and ensure its of the right type
+                    var resp = new SpokesResponse(data);
+                    if (resp.Type != SpokesResponseType.Bool)
+                        resp.isValid = false;
+
+                    //Set that we aren't attached anymore, if if this failed
                     local.Sess_Id = "";
                     local.isAttached = false;
 
@@ -145,7 +141,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //Returns the info for our connected device
-        Device.prototype.deviceInfo = function(callback) {
+        Device.prototype.deviceInfo = function (callback) {
             //Can't release, we aren't attached
             if (callback == null || callback == undefined)
                 return false;
@@ -157,7 +153,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
             //Register a session
             local = this;
             $.getJSON(this.Path + "/DeviceServices/Info?callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.DeviceInfo)
@@ -177,12 +173,12 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
             return true;
         }
 
-        Device.prototype.atdMobileCallerId = function(callback) {
+        Device.prototype.atdMobileCallerId = function (callback) {
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
 
             $.getJSON(this.Path + "/DeviceServices/ATDMobileCallerId?sess=" + this.Sess_Id + "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.String)
@@ -197,7 +193,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
             return true;
         }
 
-        Device.prototype.proximity = function(enabled, callback) {
+        Device.prototype.proximity = function (enabled, callback) {
             if (typeof (enabled) !== "boolean")
                 return false;
 
@@ -205,7 +201,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
             SpokesAction.Action_List.unshift(action);
 
             $.getJSON(this.Path + "/DeviceServices/Proximity?sess=" + this.Sess_Id + "&enabled=" + enabled + "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.String)
@@ -221,7 +217,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //Returns all the valid events that have happened since last call
-        Device.prototype.events = function(queue, callback) {
+        Device.prototype.events = function (queue, callback) {
             //Check if I was only given one argument
             if (callback == undefined && typeof (queue) === 'function') {
                 callback = queue;
@@ -241,7 +237,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
 
             //Register a session
             $.getJSON(this.Path + "/DeviceServices/Events?sess=" + this.Sess_Id + "&queue=" + queue + "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.DeviceEventArray)
@@ -257,26 +253,26 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //Returns specific event queues
-        Device.prototype.headsetEvents = function(callback) {
+        Device.prototype.headsetEvents = function (callback) {
             var evt = (SpokesEventType.HeadsetButtonPressed |
                 SpokesEventType.HeadsetStateChange);
             return this.events(evt, callback);
         }
 
         //Returns specific event queues
-        Device.prototype.baseEvents = function(callback) {
+        Device.prototype.baseEvents = function (callback) {
             var evt = (SpokesEventType.BaseButtonPressed |
                 SpokesEventType.BaseStateChange);
             return this.events(evt, callback);
         }
 
         //Returns specific event queues
-        Device.prototype.atdEvents = function(callback) {
+        Device.prototype.atdEvents = function (callback) {
             return this.events(SpokesEventType.ATDStateChange, callback);
         }
 
         //Starts or stops the ringer in the headest
-        Device.prototype.ring = function(enabled, callback) {
+        Device.prototype.ring = function (enabled, callback) {
             //Can't release, we aren't attached
             if (typeof (enabled) !== "boolean")
                 return false;
@@ -288,7 +284,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
             //Register a session
             $.getJSON(this.Path + "/DeviceServices/Ring?enabled=" + enabled +
                 "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Bool)
@@ -304,7 +300,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //Sets the audio state, for wireless headsets MonoOn/Off turns them on and off
-        Device.prototype.audioState = function(state, callback) {
+        Device.prototype.audioState = function (state, callback) {
             //Can't release, we aren't attached
             if (typeof (state) !== "number")
                 return false;
@@ -319,7 +315,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
             //Register a session
             $.getJSON(this.Path + "/DeviceServices/AudioState?state=" + state +
                 "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Bool)
@@ -337,14 +333,14 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         // EventManager
 
         //Returns the queues we are registered for
-        Device.prototype.getEventRegistry = function(callback) {
+        Device.prototype.getEventRegistry = function (callback) {
             //Register the callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
 
             //Register a session
             $.getJSON(this.Path + "/EventManager/GetRegistry?sess=" + this.Sess_Id + "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Integer)
@@ -360,7 +356,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //Defines a list of queues we are registred for
-        Device.prototype.setEventRegistry = function(queue, callback) {
+        Device.prototype.setEventRegistry = function (queue, callback) {
             //If they gave me an array of queue items, compress them down to an int
             queue = compressQueueList(queue);
 
@@ -371,7 +367,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
             //Register a session
             $.getJSON(this.Path + "/EventManager/SetRegistry?sess=" + this.Sess_Id + "&queue=" + queue +
                 "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Integer)
@@ -387,7 +383,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //Adds a list of queues from our registry
-        Device.prototype.addEventRegistry = function(queue, callback) {
+        Device.prototype.addEventRegistry = function (queue, callback) {
             //If they gave me an array of queue items, compress them down to an int
             queue = compressQueueList(queue);
 
@@ -398,7 +394,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
             //Register a session
             $.getJSON(this.Path + "/EventManager/AddRegistry?sess=" + this.Sess_Id + "&queue=" + queue +
                 "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Integer)
@@ -414,7 +410,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //Removes a list of queues from our registry
-        Device.prototype.removeEventRegistry = function(queue, callback) {
+        Device.prototype.removeEventRegistry = function (queue, callback) {
             //If they gave me an array of queue items, compress them down to an int
             queue = compressQueueList(queue);
 
@@ -425,7 +421,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
             //Register a session
             $.getJSON(this.Path + "/EventManager/RemoveRegistry?sess=" + this.Sess_Id + "&queue=" + queue +
                 "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Integer)
@@ -441,7 +437,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //Sets the time to live for all event queue messages
-        Device.prototype.setGlobalTTL = function(ttl, callback) {
+        Device.prototype.setGlobalTTL = function (ttl, callback) {
             //Register the callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
@@ -449,7 +445,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
             //Register a session
             $.getJSON(this.Path + "/EventManager/GlobalTTL?sess=" + this.Sess_Id + "&ttl=" + ttl +
                 "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Integer)
@@ -465,7 +461,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //Sets the max number of events per queue, for all queues
-        Device.prototype.setGlobalMaxEvents = function(max, callback) {
+        Device.prototype.setGlobalMaxEvents = function (max, callback) {
             //Register the callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
@@ -473,7 +469,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
             //Register a session
             $.getJSON(this.Path + "/EventManager/GlobalMaxCount?sess=" + this.Sess_Id + "&max=" + max +
                 "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Integer)
@@ -489,7 +485,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //Sets the time to live for a list of queues
-        Device.prototype.setQueueTTL = function(queue, ttl, callback) {
+        Device.prototype.setQueueTTL = function (queue, ttl, callback) {
 
             //If they gave me an array of queue items, compress them down to an int
             queue = compressQueueList(queue);
@@ -502,7 +498,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
             $.getJSON(this.Path + "/EventManager/TTL?sess=" + this.Sess_Id + "&queue=" + queue +
                 "&ttl=" + ttl +
                 "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Integer)
@@ -518,7 +514,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //Sets the max number of events per queue, for the list of queues given
-        Device.prototype.setQueueMaxEvents = function(queue, max, callback) {
+        Device.prototype.setQueueMaxEvents = function (queue, max, callback) {
             //If they gave me an array of queue items, compress them down to an int
             queue = compressQueueList(queue);
 
@@ -530,7 +526,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
             $.getJSON(this.Path + "/EventManager/MaxCount?sess=" + this.Sess_Id + "&queue=" + queue +
                 "&max=" + max +
                 "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Integer)
@@ -546,7 +542,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //Define CallState
-        function SessionCallState() {}
+        function SessionCallState() { }
 
         SessionCallState.Unknown = 0;
         SessionCallState.AcceptCall = 1;
@@ -600,7 +596,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         SessionCallState.Lookup[SessionCallState.RejectCall] = "RejectCall";
 
         //Define all the audio states that exist
-        function SpokesAudioType() {}
+        function SpokesAudioType() { }
 
         SpokesAudioType.MonoOn = 1;
         SpokesAudioType.MonoOff = 2;
@@ -619,7 +615,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         SpokesAudioType.Lookup[SpokesAudioType.StereoOnWait] = "StereoOnWait";
 
         //Define my response types
-        function SpokesResponseType() {}
+        function SpokesResponseType() { }
 
         SpokesResponseType.Unknown = 0;
         SpokesResponseType.Error = 1;
@@ -655,67 +651,67 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
             //Store a user result object
             switch (this.Type) {
                 //Object types that js knowns about
-            case SpokesResponseType.Bool:
-            case SpokesResponseType.Integer:
-            case SpokesResponseType.SessionHash:
-            case SpokesResponseType.String:
-            case SpokesResponseType.CallManagerState:
-                this.Result = obj["Result"];
-                break;
+                case SpokesResponseType.Bool:
+                case SpokesResponseType.Integer:
+                case SpokesResponseType.SessionHash:
+                case SpokesResponseType.String:
+                case SpokesResponseType.CallManagerState:
+                    this.Result = obj["Result"];
+                    break;
 
-            //Create a device info object
-            case SpokesResponseType.DeviceInfo:
-                this.Result = new SpokesDeviceInfo(obj["Result"]);
-                break;
+                //Create a device info object
+                case SpokesResponseType.DeviceInfo:
+                    this.Result = new SpokesDeviceInfo(obj["Result"]);
+                    break;
 
-            //Create an array of device info objects
-            case SpokesResponseType.DeviceInfoArray:
-                //Store my json array and get my result ready to handle data
-                var ary = obj["Result"];
-                this.Result = new Array();
+                //Create an array of device info objects
+                case SpokesResponseType.DeviceInfoArray:
+                    //Store my json array and get my result ready to handle data
+                    var ary = obj["Result"];
+                    this.Result = new Array();
 
-                //Craete device info objects and store them
-                for (var i = 0; i < ary.length; i++)
-                    this.Result[i] = new SpokesDeviceInfo(ary[i]);
-                break;
+                    //Craete device info objects and store them
+                    for (var i = 0; i < ary.length; i++)
+                        this.Result[i] = new SpokesDeviceInfo(ary[i]);
+                    break;
 
-            //Store an array of events
-            case SpokesResponseType.DeviceEventArray:
-                //Store my json array and get my result ready to handle data
-                var ary = obj["Result"];
-                this.Result = new Array();
+                //Store an array of events
+                case SpokesResponseType.DeviceEventArray:
+                    //Store my json array and get my result ready to handle data
+                    var ary = obj["Result"];
+                    this.Result = new Array();
 
-                //Craete device info objects and store them
-                for (var i = 0; i < ary.length; i++)
-                    this.Result[i] = new SpokesEvent(ary[i]);
-                break;
+                    //Craete device info objects and store them
+                    for (var i = 0; i < ary.length; i++)
+                        this.Result[i] = new SpokesEvent(ary[i]);
+                    break;
 
-            //Returns an array of call states
-            case SpokesResponseType.CallStateArray:
-            case SpokesResponseType.StringArray:
-                //Store my json array and get my result ready to handle data
-                var ary = obj["Result"];
-                this.Result = new Array();
+                //Returns an array of call states
+                case SpokesResponseType.CallStateArray:
+                case SpokesResponseType.StringArray:
+                    //Store my json array and get my result ready to handle data
+                    var ary = obj["Result"];
+                    this.Result = new Array();
 
-                //Craete device info objects and store them
-                for (var i = 0; i < ary.length; i++)
-                    this.Result[i] = ary[i];
-                break;
+                    //Craete device info objects and store them
+                    for (var i = 0; i < ary.length; i++)
+                        this.Result[i] = ary[i];
+                    break;
 
-            //Returns an array of contact arrays
-            case SpokesResponseType.ContactArray:
-                //Store my json array and get my result ready to handle data
-                var ary = obj["Result"];
-                this.Result = new Array();
+                //Returns an array of contact arrays
+                case SpokesResponseType.ContactArray:
+                    //Store my json array and get my result ready to handle data
+                    var ary = obj["Result"];
+                    this.Result = new Array();
 
-                //Craete device info objects and store them
-                for (var i = 0; i < ary.length; i++)
-                    this.Result[i] = new SpokesContact(ary[i]);
-                break;
+                    //Craete device info objects and store them
+                    for (var i = 0; i < ary.length; i++)
+                        this.Result[i] = new SpokesContact(ary[i]);
+                    break;
 
-            default:
-                alert("Invalid object type sent");
-                break;
+                default:
+                    alert("Invalid object type sent");
+                    break;
             }
         }
 
@@ -740,7 +736,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //Stores the spokes event types that can exist
-        function SpokesEventType() {}
+        function SpokesEventType() { }
 
         SpokesEventType.DeviceStateChange = 1;
         SpokesEventType.HeadsetStateChange = 2;
@@ -761,7 +757,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //Defines a spokes error
-        function SpokesErrorType() {}
+        function SpokesErrorType() { }
 
         SpokesErrorType.Unknown = 0;
         SpokesErrorType.Invalid_Uid = 1;
@@ -807,14 +803,14 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //List out all plugins
-        Plugin.prototype.pluginList = function(callback) {
+        Plugin.prototype.pluginList = function (callback) {
             //Register the callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
 
             //Register a session
             $.getJSON(this.Path + "/SessionManager/PluginList?callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.StringArray)
@@ -830,14 +826,14 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //Register a plugin
-        Plugin.prototype.register = function(name, callback) {
+        Plugin.prototype.register = function (name, callback) {
             //Register the callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
 
             //Register a session
             $.getJSON(this.Path + "/SessionManager/Register?name=" + name + "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Bool)
@@ -853,14 +849,14 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //Unregister a plugin
-        Plugin.prototype.unRegister = function(name, callback) {
+        Plugin.prototype.unRegister = function (name, callback) {
             //Register the callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
 
             //Register a session
             $.getJSON(this.Path + "/SessionManager/UnRegister?name=" + name + "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Bool)
@@ -876,7 +872,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //Set that the plugin is active
-        Plugin.prototype.isActive = function(name, active, callback) {
+        Plugin.prototype.isActive = function (name, active, callback) {
             //Register the callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
@@ -885,7 +881,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
             $.getJSON(this.Path + "/SessionManager/IsActive?name=" + name +
                 "&active=" + active +
                 "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Bool)
@@ -903,14 +899,14 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         // Call services
 
         //callManagerState
-        Plugin.prototype.callManagerState = function(callback) {
+        Plugin.prototype.callManagerState = function (callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
 
             //Register a session
             $.getJSON(this.Path + "/CallServices/CallManagerState?callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.CallManagerState)
@@ -925,14 +921,14 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
             return true;
         }
         // session events
-        Plugin.prototype.sessionEvents = function(callback) {
+        Plugin.prototype.sessionEvents = function (callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
 
             //Register a session
             $.getJSON(this.Path + "/CallServices/Events?callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.StringArray)
@@ -947,14 +943,14 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
             return true;
         }
         // call call events
-        Plugin.prototype.sessionCallEvents = function(name, callback) {
+        Plugin.prototype.sessionCallEvents = function (name, callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
 
             //Register a session
             $.getJSON(this.Path + "/CallServices/SessionManagerCallEvents?name=" + name + "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.StringArray)
@@ -970,14 +966,14 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         // callEvents
-        Plugin.prototype.callEvents = function(name, callback) {
+        Plugin.prototype.callEvents = function (name, callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
 
             //Register a session
             $.getJSON(this.Path + "/CallServices/CallEvents?name=" + name + "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.CallStateArray)
@@ -993,14 +989,14 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         // callRequests
-        Plugin.prototype.callRequests = function(name, callback) {
+        Plugin.prototype.callRequests = function (name, callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
 
             //Register a session
             $.getJSON(this.Path + "/CallServices/CallRequests?name=" + name + "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.ContactArray)
@@ -1016,7 +1012,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
         // TODO: RingTone, AudioRoute
         // incomingCall
-        Plugin.prototype.incomingCall = function(name, callID, contact, tones, route, callback) {
+        Plugin.prototype.incomingCall = function (name, callID, contact, tones, route, callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
@@ -1033,7 +1029,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
                 "&tones=" + tones +
                 "&route=" + route +
                 "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Bool)
@@ -1049,7 +1045,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
         // todo: AudioRoute
         // outgoingCall
-        Plugin.prototype.outgoingCall = function(name, callID, contact, route, callback) {
+        Plugin.prototype.outgoingCall = function (name, callID, contact, route, callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
@@ -1066,7 +1062,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
                 "&contact=" + contact +
                 "&route=" + route +
                 "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Bool)
@@ -1082,7 +1078,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         // terminateCall
-        Plugin.prototype.terminateCall = function(name, callID, callback) {
+        Plugin.prototype.terminateCall = function (name, callID, callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
@@ -1096,7 +1092,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
             $.getJSON(this.Path + "/CallServices/TerminateCall?name=" + name +
                 "&callID=" + callID +
                 "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Bool)
@@ -1112,7 +1108,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         // answerCall
-        Plugin.prototype.answerCall = function(name, callID, callback) {
+        Plugin.prototype.answerCall = function (name, callID, callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
@@ -1126,7 +1122,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
             $.getJSON(this.Path + "/CallServices/AnswerCall?name=" + name +
                 "&callID=" + callID +
                 "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Bool)
@@ -1142,7 +1138,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         // holdCall
-        Plugin.prototype.holdCall = function(name, callID, callback) {
+        Plugin.prototype.holdCall = function (name, callID, callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
@@ -1156,7 +1152,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
             $.getJSON(this.Path + "/CallServices/HoldCall?name=" + name +
                 "&callID=" + callID +
                 "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Bool)
@@ -1172,7 +1168,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         // resumeCall
-        Plugin.prototype.resumeCall = function(name, callID, callback) {
+        Plugin.prototype.resumeCall = function (name, callID, callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
@@ -1186,7 +1182,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
             $.getJSON(this.Path + "/CallServices/ResumeCall?name=" + name +
                 "&callID=" + callID +
                 "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Bool)
@@ -1203,7 +1199,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
 
 
         // muteCall
-        Plugin.prototype.muteCall = function(name, muted, callback) {
+        Plugin.prototype.muteCall = function (name, muted, callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
@@ -1228,7 +1224,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         // insertCall
-        Plugin.prototype.insertCall = function(name, callID, contact, callback) {
+        Plugin.prototype.insertCall = function (name, callID, contact, callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
@@ -1244,7 +1240,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
                 "&callID=" + callID +
                 "&contact=" + contact +
                 "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Bool)
@@ -1260,7 +1256,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
         // todo: AudioRoute
         // setAudioRoute
-        Plugin.prototype.setAudioRoute = function(name, callID, route, callback) {
+        Plugin.prototype.setAudioRoute = function (name, callID, route, callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
@@ -1275,7 +1271,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
                 "&callID=" + callID +
                 "&route=" + route +
                 "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Bool)
@@ -1291,7 +1287,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         // setConferenceId
-        Plugin.prototype.setConferenceId = function(name, callID, callback) {
+        Plugin.prototype.setConferenceId = function (name, callID, callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
@@ -1305,7 +1301,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
             $.getJSON(this.Path + "/CallServices/SetConferenceId?name=" + name +
                 "&callID=" + callID +
                 "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Bool)
@@ -1321,7 +1317,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         // makeCall
-        Plugin.prototype.makeCall = function(name, contact, callback) {
+        Plugin.prototype.makeCall = function (name, contact, callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
@@ -1334,7 +1330,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
             $.getJSON(this.Path + "/CallServices/MakeCall?name=" + name +
                 "&contact=" + contact +
                 "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Bool)
@@ -1348,7 +1344,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
 
             return true;
         }
-        var getName = function() {
+        var getName = function () {
             var funcNameRegex = /function (.{1,})\(/;
             var results = (funcNameRegex).exec((this).constructor.toString());
             return (results && results.length > 1) ? results[1] : "";
@@ -1365,14 +1361,14 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //GetDefaultSoftPhone
-        UserPreference.prototype.getDefaultSoftphone = function(callback) {
+        UserPreference.prototype.getDefaultSoftphone = function (callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
 
 
             $.getJSON(this.Path + "/UserPreference/GetDefaultSoftPhone?callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.String)
@@ -1388,14 +1384,14 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //getEscalateToVoiceSoftPhone
-        UserPreference.prototype.getEscalateToVoiceSoftPhone = function(callback) {
+        UserPreference.prototype.getEscalateToVoiceSoftPhone = function (callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
 
 
             $.getJSON(this.Path + "/UserPreference/GetEscalateToVoiceSoftPhone?callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.String)
@@ -1411,14 +1407,14 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //getMediaPlayerActionIncomingCall
-        UserPreference.prototype.getMediaPlayerActionIncomingCall = function(callback) {
+        UserPreference.prototype.getMediaPlayerActionIncomingCall = function (callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
 
 
             $.getJSON(this.Path + "/UserPreference/GetMediaPlayerActionIncomingCall?callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.String)
@@ -1434,14 +1430,14 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //getMediaPlayerActionEndedCall
-        UserPreference.prototype.getMediaPlayerActionEndedCall = function(callback) {
+        UserPreference.prototype.getMediaPlayerActionEndedCall = function (callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
 
 
             $.getJSON(this.Path + "/UserPreference/GetMediaPlayerActionEndedCall?callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.String)
@@ -1457,14 +1453,14 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //getAutoPresence
-        UserPreference.prototype.getAutoPresence = function(callback) {
+        UserPreference.prototype.getAutoPresence = function (callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
 
 
             $.getJSON(this.Path + "/UserPreference/GetAutoPresence?callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Bool)
@@ -1480,14 +1476,14 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //getDoffAction
-        UserPreference.prototype.getDoffAction = function(callback) {
+        UserPreference.prototype.getDoffAction = function (callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
 
 
             $.getJSON(this.Path + "/UserPreference/GetDoffAction?callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.String)
@@ -1503,14 +1499,14 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //getDonAction
-        UserPreference.prototype.getDonAction = function(callback) {
+        UserPreference.prototype.getDonAction = function (callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
 
 
             $.getJSON(this.Path + "/UserPreference/GetDonAction?callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.String)
@@ -1526,14 +1522,14 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //getKeepLinkUp
-        UserPreference.prototype.getKeepLinkUp = function(callback) {
+        UserPreference.prototype.getKeepLinkUp = function (callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
 
 
             $.getJSON(this.Path + "/UserPreference/GetKeepLinkUp?callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Bool)
@@ -1549,14 +1545,14 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //getRingPCAndHS
-        UserPreference.prototype.getRingPCAndHS = function(callback) {
+        UserPreference.prototype.getRingPCAndHS = function (callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
 
 
             $.getJSON(this.Path + "/UserPreference/GetRingPCAndHS?callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Bool)
@@ -1572,14 +1568,14 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //SetDefaultSoftPhone
-        UserPreference.prototype.setDefaultSoftphone = function(name, callback) {
+        UserPreference.prototype.setDefaultSoftphone = function (name, callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
 
 
             $.getJSON(this.Path + "/UserPreference/SetDefaultSoftPhone?name=" + name + "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Bool)
@@ -1595,14 +1591,14 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //SetEscalateToVoiceSoftPhone
-        UserPreference.prototype.setEscalateToVoiceSoftPhone = function(name, callback) {
+        UserPreference.prototype.setEscalateToVoiceSoftPhone = function (name, callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
 
 
             $.getJSON(this.Path + "/UserPreference/SetEscalateToVoiceSoftPhone?name=" + name + "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Bool)
@@ -1618,14 +1614,14 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //SetMediaPlayerActionIncomingCall
-        UserPreference.prototype.setMediaPlayerActionIncomingCall = function(actionIncoming, callback) {
+        UserPreference.prototype.setMediaPlayerActionIncomingCall = function (actionIncoming, callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
 
 
             $.getJSON(this.Path + "/UserPreference/SetMediaPlayerActionIncomingCall?actionIncoming=" + actionIncoming + "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Bool)
@@ -1641,14 +1637,14 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //SetMediaPlayerActionEndedCall
-        UserPreference.prototype.setMediaPlayerActionEndedCall = function(actionEnded, callback) {
+        UserPreference.prototype.setMediaPlayerActionEndedCall = function (actionEnded, callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
 
 
             $.getJSON(this.Path + "/UserPreference/SetMediaPlayerActionEndedCall?actionEnded=" + actionEnded + "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Bool)
@@ -1664,14 +1660,14 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //SetAutoPresence
-        UserPreference.prototype.setAutoPresence = function(autoPresence, callback) {
+        UserPreference.prototype.setAutoPresence = function (autoPresence, callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
 
 
             $.getJSON(this.Path + "/UserPreference/SetAutoPresence?autoPresence=" + autoPresence + "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Bool)
@@ -1687,14 +1683,14 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //SetDoffAction
-        UserPreference.prototype.setDoffAction = function(doffAction, callback) {
+        UserPreference.prototype.setDoffAction = function (doffAction, callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
 
 
             $.getJSON(this.Path + "/UserPreference/SetDoffAction?doffAction=" + doffAction + "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Bool)
@@ -1710,14 +1706,14 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //SetDonAction
-        UserPreference.prototype.setDonAction = function(donAction, callback) {
+        UserPreference.prototype.setDonAction = function (donAction, callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
 
 
             $.getJSON(this.Path + "/UserPreference/SetDonAction?donAction=" + donAction + "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Bool)
@@ -1733,14 +1729,14 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //SetKeepLinkUp
-        UserPreference.prototype.setKeepLinkUp = function(keepLinkUp, callback) {
+        UserPreference.prototype.setKeepLinkUp = function (keepLinkUp, callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
 
 
             $.getJSON(this.Path + "/UserPreference/SetKeepLinkUp?keepLinkUp=" + keepLinkUp + "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Bool)
@@ -1756,14 +1752,14 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
         }
 
         //SetRingPCAndHS
-        UserPreference.prototype.setRingPCAndHS = function(ringPcAndHS, callback) {
+        UserPreference.prototype.setRingPCAndHS = function (ringPcAndHS, callback) {
             //Register callback
             var action = new SpokesAction(callback);
             SpokesAction.Action_List.unshift(action);
 
 
             $.getJSON(this.Path + "/UserPreference/SetRingPCAndHS?ringPcAndHS=" + ringPcAndHS + "&callback=?",
-                function(data) {
+                function (data) {
                     //Create a nice object, and ensure its of the right type
                     var resp = new SpokesResponse(data);
                     if (resp.Type != SpokesResponseType.Bool)
@@ -1787,7 +1783,7 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
             var level_padding = "";
             for (var j = 0; j < level + 1; j++) level_padding += "    ";
 
-            if (typeof (arr) == 'object') { //Array/Hashes/Objects 
+            if (typeof (arr) == 'object') { //Array/Hashes/Objects
                 for (var item in arr) {
                     var value = arr[item];
 
@@ -1803,386 +1799,269 @@ Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com
             }
             return dumped_text;
         }
+    </script>
+    <!-- Main page -->
+    <h1>Plantronics JavaScript Sample</h1>
+    Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com/software" target="_new">www.plantronics.com/software</a>
+    <p>Note Firefox users: If you get "Error connecting to Plantronics Hub." then visit this URL: <a href="https://127.0.0.1:32018/Spokes/DeviceServices/Info" target="_new">https://127.0.0.1:32018/Spokes/DeviceServices/Info</a> and click Advanced > Add Exception... to add a security exception to allow the connection.</p>
 
-        var audiostream = null;
+    <p>
+        <b>plt sample menu<br />
+        --</b><br />
+        <button id="incoming_call">ring/incoming call</button><br />
+        <button id="outgoing_call">outgoing call</button><br />
+        <button id="answer_call">answer call</button><br />
+        <button id="hold_call">hold call</button><br />
+        <button id="resume_call">resume call</button><br />
+        <button id="mute_call">mute call</button><br />
+        <button id="unmute_call">unmute call</button><br />
+        <button id="end_call">end call</button>
+    </p>
 
-        function setupWebAudioAPI()
-        {
-            if (audiostream == null) {
-                console.log("set up Web Audio API");
+    <button id="clear_log">Clear Log</button>
 
-                function hasGetUserMedia() {
-                    return !!(navigator.getUserMedia || navigator.webkitGetUserMedia ||
-                        navigator.mozGetUserMedia || navigator.msGetUserMedia);
-                }
+    <div id="log"><b>Log:</b></div>
+    <script type="text/javascript">
+        var spokes; // global Spokes object, initialised when you click connect below
+        var plugin_registered = false;
+        var plugin_name = "Hello World JavaScript Plugin";
+        var callid = 0;
 
-                if (hasGetUserMedia()) {
-                    //alert('Good to go!');
+        // Sample menu commands:
 
-                    var errorCallback = function(e) {
-                        //alert('errorCallback running');
-                        console.log('Reeeejected!', e);
-                    };
+        $('#clear_log').click(function () {
+            log.innerHTML = "<b>Log:</b>";
+        });
 
-                    var mediaCallback =
-                        function(stream) {
-                            //alert('mediaCallback running');
-                            audiostream = stream;
-                            var audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                            if (audioContext) {
-                                // work in progress, can i show the mic level???
-                                //    analyser = audioContext.createAnalyser();
-                                //    microphone = audioContext.createMediaStreamSource(stream);
-                                //    javascriptNode = audioContext.createJavaScriptNode(2048, 1, 1);
+        $('#incoming_call').click(function () {
+            callid = callid + 1;
+            call_id = callid;
+            appendLog("<font color=\"#00FF00\">Initiating make call command, call id = " + callid.toString() + "</font>");
 
-                                //    analyser.smoothingTimeConstant = 0.3;
-                                //    analyser.fftSize = 1024;
+            spokes.Plugin.incomingCall(plugin_name, getCallId(callid), getContact("Dummy Contact"), "Unknown", "ToHeadset", function (result) {
+                showCallStatus(result);
+            });
+        });
 
-                                //    microphone.connect(analyser);
-                                //    analyser.connect(javascriptNode);
-                                //    javascriptNode.connect(audioContext.destination);
+        $('#outgoing_call').click(function () {
+            callid = callid + 1;
+            call_id = callid;
+            appendLog("<font color=\"#00FF00\">Initiating make call command, call id = " + callid.toString() + "</font>");
 
-                                //    //canvasContext = $("#canvas")[0].getContext("2d");
-                                //    canvasContext = document.getElementById("test");
-                                //    canvasContext = canvasContext.getContext("2d");
+            spokes.Plugin.outgoingCall(plugin_name, getCallId(callid), getContact("Dummy Contact"), "ToHeadset", function (result) {
+                showCallStatus(result);
+            });
+        });
 
-                                //    javascriptNode.onaudioprocess = function() {
-                                //        var array = new Uint8Array(analyser.frequencyBinCount);
-                                //        analyser.getByteFrequencyData(array);
-                                //        var values = 0;
+        $('#answer_call').click(function () {
+            appendLog("<font color=\"#00FF00\">Answering call command, call id = " + callid.toString() + "</font>");
 
-                                //        var length = array.length;
-                                //        for (var i = 0; i < length; i++) {
-                                //            values += array[i];
-                                //        }
+            spokes.Plugin.answerCall(plugin_name, getCallId(callid), function (result) {
+                showCallStatus(result);
+            });
+        });
 
-                                //        var average = values / length;
-                                //        canvasContext.clearRect(0, 0, 60, 130);
-                                //        canvasContext.fillStyle = '#00ff00';
-                                //        canvasContext.fillRect(0, 130 - average, 25, 130);
-                                //    }
-                            } else {
-                                //alert("not able to use audio - no Web Audio API");
-                                console.log("not able to use audio - no Web Audio API");
-                            }
-                        };
+        $('#hold_call').click(function () {
+            appendLog("<font color=\"#00FF00\">Answering call command, call id = " + callid.toString() + "</font>");
 
-                    //alert('get the media');
-                    if (navigator.getUserMedia) {
-                        //alert('navigator.getUserMedia');
-                        navigator.getUserMedia({ video: false, audio: true }, mediaCallback);
-                    } else if (navigator.webkitGetUserMedia) {
-                        //alert('navigator.webkitGetUserMedia');
-                        navigator.webkitGetUserMedia({ video: false, audio: true }, mediaCallback);
-                    } else if (navigator.mediaDevices.getUserMedia) {
-                        //alert('navigator.mediaDevices.getUserMedia');
-                        var p = navigator.mediaDevices.getUserMedia({ video: false, audio: true });
-                        p.then(mediaCallback);
-                        p.catch(errorCallback);
-                    } else if (navigator.msGetUserMedia) {
-                        //alert('navigator.msGetUserMedia');
-                        navigator.msGetUserMedia({ video: false, audio: true }, mediaCallback);
+            spokes.Plugin.holdCall(plugin_name, getCallId(callid), function (result) {
+                showCallStatus(result);
+            });
+        });
+
+        $('#resume_call').click(function () {
+            appendLog("<font color=\"#00FF00\">Answering call command, call id = " + callid.toString() + "</font>");
+
+            spokes.Plugin.resumeCall(plugin_name, getCallId(callid), function (result) {
+                showCallStatus(result);
+            });
+        });
+
+        $('#mute_call').click(function () {
+            appendLog("<font color=\"#00FF00\">Muting call, call id = " + callid.toString() + "</font>");
+
+            spokes.Plugin.muteCall(plugin_name, true, function (result) {
+                showCallStatus(result);
+            });
+        });
+
+        $('#unmute_call').click(function () {
+            appendLog("<font color=\"#00FF00\">Unmuting call, call id = " + callid.toString() + "</font>");
+
+            spokes.Plugin.muteCall(plugin_name, false, function (result) {
+                showCallStatus(result);
+            });
+        });
+
+        $('#end_call').click(function () {
+            appendLog("<font color=\"#00FF00\">Ending call, call id = " + callid.toString() + "</font>");
+
+            spokes.Plugin.terminateCall(plugin_name, getCallId(callid), function (result) {
+                showCallStatus(result);
+            });
+        });
+
+        // Other helper functions:
+
+        function getCallId(callid) {
+            return new SpokesCallId({ Id: '' + callid } );
+        }
+
+        function getContact(contactname) {
+            return new SpokesContact({ Name: contactname });
+        }
+
+        // displays status of call commands
+        function showCallStatus(result, toJson) {
+            if (result.isError) {
+                appendLog("Error: " + result.Err.Description);
+            } else {
+                if (toJson) appendLog(JSON.stringify(result.Result))
+                else appendLog("Success.");
+            }
+        };
+
+        function appendLog(str) {
+            log.innerHTML = log.innerHTML + "<br />" + str;
+        }
+
+        function connectToSpokes() {
+            // check Jquery is loaded before using Spokes object...
+            //checkJquery();
+
+            //Create my spokes object
+            spokes = new Spokes("https://127.0.0.1:32018/Spokes");
+
+            // get list of attached devices
+            //spokes.Device.deviceList(function (result) {
+            spokes.Device.deviceInfo(function (result) {
+                //Create table of all the devices we found if no errors
+                if (!result.isError) {
+                    if (result.Result /*[0]*/ != null) {
+                        // Log Spokes active device found (first in list returned, index 0)
+                        appendLog("Device found = " + result.Result /*[0]*/.ProductName + ", id = " + result.Result /*[0]*/.Uid);
+
+                        // attach to the device
+                        spokes.Device.attach(result.Result /*[0]*/.Uid, controlInterface);
+
+                        // start polling the device for events...
+                        pollDeviceEvents();
+                    } else {
+                        appendLog("Error: Device was null on connecting to Spokes. Is there a Plantronics device connected?");
                     }
                 } else {
-                    //alert('getUserMedia() is not supported in your browser');
-                    console.log("getUserMedia() is not supported in your browser");
-                }
-            }
-        }
-
-        function shutDownAudio()
-        {
-            if (audiostream != null) {
-                //alert(audiostream.getAudioTracks()[0]);
-                audiostream.getAudioTracks()[0].stop();
-                audiostream = null;
-            }
-        }
-
-    </script><!-- Main page --><!-- work in progress, can i display a mic vu meter? --><!-- <canvas id="test" style="background-color: black;"></canvas> -->
-<h1>Hello Plantronics World!</h1>
-
-<p><button id="connect_to_spokes">Connect to Spokes</button><button id="disconnect_from_spokes">Disconnect from Spokes</button></p>
-
-<p><button id="ring_device">Ring Device</button><button id="stop_ringing_device">Stop Ringing Device</button></p>
-
-<form id="call_controls">Call id: <input id="call_id" readonly="readonly" size="3" type="text" value="0" />&nbsp;</form>
-<button id="make_call">Make outgoing call</button><button id="make_incoming_call">Make incoming call</button><button id="answer_call">Answer incoming call</button><button id="mute_call">Mute call</button><button id="unmute_call">Un-mute call</button><button id="end_call">End call</button><br />
-<button id="clear_log">Clear Log</button>
-
-<div id="log"><b>Log:</b></div>
-<script type="text/javascript">
-    var spokes; // global Spokes object, initialised when you click connect below
-    var plugin_registered = false;
-    var plugin_name = "Hello World JavaScript Plugin";
-    var callid = 0;
-
-    // Button commands:
-
-    $('#connect_to_spokes').click(function() {
-        appendLog("Connecting...");
-        connectToSpokes();
-    });
-
-    $('#disconnect_from_spokes').click(function() {
-        appendLog("Disconnecting...");
-        disconnectFromSpokes();
-    });
-
-    $('#clear_log').click(function() {
-        log.innerHTML = "<b>Log:</b>";
-    });
-
-    $('#ring_device').click(function() {
-        appendLog("<font color=\"#00FF00\">Sending ring device command</font>");
-        spokes.Device.ring(true);
-    });
-
-    $('#stop_ringing_device').click(function() {
-        appendLog("<font color=\"#00FF00\">Sending stop ringing device command</font>");
-        spokes.Device.ring(false);
-    });
-
-    $('#make_call').click(function() {
-        callid = callid + 1;
-        document.forms['call_controls'].elements["call_id"].value = callid;
-        call_id = callid;
-        appendLog("<font color=\"#00FF00\">Initiating make call command, call id = " + callid.toString() + "</font>");
-
-        spokes.Plugin.outgoingCall(plugin_name, getCallId('#call_id'), getContact("Dummy Contact"), "ToHeadset", function(result) {
-            showCallStatus(result);
-            setupWebAudioAPI();
-        });
-    });
-
-    $('#make_incoming_call').click(function() {
-        callid = callid + 1;
-        document.forms['call_controls'].elements["call_id"].value = callid;
-        call_id = callid;
-        appendLog("<font color=\"#00FF00\">Initiating make call command, call id = " + callid.toString() + "</font>");
-
-        spokes.Plugin.incomingCall(plugin_name, getCallId('#call_id'), getContact("Dummy Contact"), "Unknown", "ToHeadset", function(result) {
-            showCallStatus(result);
-        });
-    });
-
-    $('#answer_call').click(function () {
-        appendLog("<font color=\"#00FF00\">Answering call command, call id = " + callid.toString() + "</font>");
-
-        spokes.Plugin.answerCall(plugin_name, getCallId('#call_id'), function (result) {
-            showCallStatus(result);
-        });
-    });
-
-    $('#end_call').click(function() {
-        appendLog("<font color=\"#00FF00\">Ending call, call id = " + callid.toString() + "</font>");
-
-        spokes.Plugin.terminateCall(plugin_name, getCallId('#call_id'), function(result) {
-            showCallStatus(result);
-            shutDownAudio();
-        });
-    });
-
-    $('#mute_call').click(function() {
-        appendLog("<font color=\"#00FF00\">Muting call, call id = " + callid.toString() + "</font>");
-
-        spokes.Plugin.muteCall(plugin_name, true, function(result) {
-            showCallStatus(result);
-        });
-    });
-
-    $('#unmute_call').click(function() {
-        appendLog("<font color=\"#00FF00\">Unmuting call, call id = " + callid.toString() + "</font>");
-
-        spokes.Plugin.muteCall(plugin_name, false, function(result) {
-            showCallStatus(result);
-        });
-    });
-
-    // Other helper functions:
-
-    //function getCallId(callid){
-    //    return new SpokesCallId( { Id: callid } );
-    //}
-    function getCallId(ctrlid) {
-        return new SpokesCallId({ Id: $(ctrlid).val() });
-    }
-
-    //function getContact(contactname){
-    //    return new SpokesContact( { Name: contactname } );
-    function getContact(ctrlid) {
-        return new SpokesContact({ Name: $(ctrlid).val() });
-    }
-
-    // displays status of call commands
-    function showCallStatus(result, toJson) {
-        if (result.isError) {
-            appendLog("Error: " + result.Err.Description);
-        } else {
-            if (toJson) appendLog(JSON.stringify(result.Result))
-            else appendLog("Success.");
-        }
-    };
-
-    function appendLog(str) {
-        log.innerHTML = log.innerHTML + "<br />" + str;
-    }
-
-    function connectToSpokes() {
-        // check Jquery is loaded before using Spokes object...
-        //checkJquery();
-
-        //Create my spokes object
-        spokes = new Spokes("https://127.0.0.1:32018/Spokes");
-
-        // get list of attached devices
-        //spokes.Device.deviceList(function (result) {
-        spokes.Device.deviceInfo(function(result) {
-            //Create table of all the devices we found if no errors
-            if (!result.isError) {
-                if (result.Result /*[0]*/ != null) {
-                    // Log Spokes active device found (first in list returned, index 0)
-                    appendLog("Device found = " + result.Result /*[0]*/.ProductName + ", id = " + result.Result /*[0]*/.Uid);
-
-                    // attach to the device
-                    spokes.Device.attach(result.Result /*[0]*/.Uid, controlInterface);
-
-                    // start polling the device for events...
-                    pollDeviceEvents();
-                } else {
-                    appendLog("Error: Device was null on connecting to Spokes. Is there a Plantronics device connected?");
-                }
-            } else {
-                appendLog("Error connecting to Plantronics Hub. (Have you installed Plantronics Hub from <a href=\"http://www.plantronics.com/software\" target=\"_new\">www.plantronics.com/software</a>?)");
-            }
-        });
-    }
-
-    //Creates a control interface
-    function controlInterface(session) {
-        if (session.isError || !spokes.Device.isAttached) {
-            appendLog("Session Registration Error");
-        } else {
-            appendLog("Session ID: " + session.Result);
-
-            registerPlugin();
-        }
-    }
-
-    // Register a Spokes Plugin session to get access to Call Services and Session Manager interfaces
-    function registerPlugin() {
-        //Choose to register, or unregister the plugin
-        if (!plugin_registered) {
-            // register new plugin to Spokes
-            spokes.Plugin.register(plugin_name, function(result) {
-                if (!result.isError) {
-                    //Set plugin active status to true
-                    spokes.Plugin.isActive(plugin_name, true, function(result) {
-                        if (!result.isError) {
-                            // plugin registered and active. Show UI.
-                            plugin_registered = true;
-                            appendLog("Plugin \"" + plugin_name + "\" registered successfully.");
-                        } else {
-                            appendLog("Error checking if plugin is active: " + result.Err.Description);
-                        }
-                    });
-                } else {
-                    appendLog("Error registering plugin: " + result.Err.Description);
+                    appendLog("Error connecting to Plantronics Hub. (Have you installed Plantronics Hub from <a href=\"http://www.plantronics.com/software\" target=\"_new\">www.plantronics.com/software</a>?)");
                 }
             });
         }
-    }
 
-    // Unregister Spokes plugin session
-    function unregisterPlugin() {
-        spokes.Plugin.unRegister(plugin_name);
-        plugin_registered = false;
-        appendLog("Plugin un-registered.");
-    }
-
-    function disconnectFromSpokes() {
-        unregisterPlugin();
-        spokes.Device.release(function(result) {
-            if (!result.isError) {
-                appendLog("Released device");
+        //Creates a control interface
+        function controlInterface(session) {
+            if (session.isError || !spokes.Device.isAttached) {
+                appendLog("Session Registration Error");
             } else {
-                appendLog("Error releasing device");
+                appendLog("Session ID: " + session.Result);
+
+                registerPlugin();
             }
-            spokes = null;
-            appendLog("Disconnected from Spokes");
-        });
-    }
+        }
 
-    // Set up device event polling if we are connected to Spokes
-    function pollDeviceEvents() {
-        setInterval(
-            function() {
-                if (spokes == null) return;
-                if (!spokes.Device.isAttached) return;
+        function setPluginActive()
+        {
+            //Set plugin active status to true
+            spokes.Plugin.isActive(plugin_name, true, function (result) {
+                if (!result.isError) {
+                    // plugin registered and active. Show UI.
+                    plugin_registered = true;
+                    appendLog("Plugin \"" + plugin_name + "\" registered successfully.");
+                } else {
+                    appendLog("Error checking if plugin is active: " + result.Err.Description);
+                }
+            });
+        }
 
-                //Make an events call
-                spokes.Device.events(
-                    function(result) {
-                        if (result.isError) {
-                            appendLog("Error polling for events: " + result.Err.Description);
-                        } else {
-                            // display list of events collected from REST service
-                            if (result.Result.length > 0) {
-                                for (var i = 0; i < result.Result.length; i++) {
-                                    appendLog("<font color=\"#0000FF\">Device Event: " + result.Result[i].Event_Log_Type_Name + ", " + print_r(result.Result[i]) + "</font>");
-                                }
-                            }
+        // Register a Spokes Plugin session to get access to Call Services and Session Manager interfaces
+        function registerPlugin() {
+            //Choose to register, or unregister the plugin
+            if (!plugin_registered) {
+                // register new plugin to Spokes
+                spokes.Plugin.register(plugin_name, function (result) {
+                    if (!result.isError) {
+                        setPluginActive();
+                    } else {
+                        appendLog("Info: registering plugin: " + result.Err.Description);
+                        if (result.Err.Description == "Plugin exists")
+                        {
+                            setPluginActive();
                         }
-                    });
+                    }
+                });
+            }
+        }
 
-                spokes.Plugin.sessionEvents(
-                    function (result) {
-                        if (result.isError) {
-                            appendLog("Error polling for session events: " + result.Err.Description);
-                        } else {
-                            // display list of events collected from REST service
-                            if (result.Result.length > 0) {
-                                for (var i = 0; i < result.Result.length; i++) {
-                                    appendLog("<font color=\"#0000FF\">Session Event: " + SessionCallState.Lookup[result.Result[i]] + "</font>");
-                                }
-                            }
-                        }
-                    });
+        // Unregister Spokes plugin session
+        function unregisterPlugin() {
+            spokes.Plugin.unRegister(plugin_name);
+            plugin_registered = false;
+            appendLog("Plugin un-registered.");
+        }
 
-                spokes.Plugin.sessionCallEvents(plugin_name,
-                    function (result) {
-                        if (result.isError) {
-                            appendLog("Error polling for session call events: " + result.Err.Description);
-                        } else {
-                            // display list of events collected from REST service
-                            if (result.Result.length > 0) {
-                                startaudio = 0;
-                                stopaudio = 0;
-                                for (var i = 0; i < result.Result.length; i++) {
-                                    appendLog("<font color=\"#0000FF\">Session Call Event: " + SessionCallState.Lookup[result.Result[i]] + "</font>");
-                                    if (SessionCallState.Lookup[result.Result[i]] == "CallInProgress")
-                                    {
-                                        startaudio = 1;
+        function disconnectFromSpokes() {
+            unregisterPlugin();
+            spokes.Device.release(function (result) {
+                if (!result.isError) {
+                    appendLog("Released device");
+                } else {
+                    appendLog("Error releasing device");
+                }
+                spokes = null;
+                appendLog("Disconnected from Spokes");
+            });
+        }
+
+        // Set up device event polling if we are connected to Spokes
+        function pollDeviceEvents() {
+            setInterval(
+                function () {
+                    if (spokes == null) return;
+                    if (!spokes.Device.isAttached) return;
+
+                    //Make an events call
+                    spokes.Device.events(
+                        function (result) {
+                            if (result.isError) {
+                                appendLog("Error polling for events: " + result.Err.Description);
+                            } else {
+                                // display list of events collected from REST service
+                                if (result.Result.length > 0) {
+                                    for (var i = 0; i < result.Result.length; i++) {
+                                        appendLog("<font color=\"#0000FF\">Device Event: " + result.Result[i].Event_Log_Type_Name + ", " + print_r(result.Result[i]) + "</font>");
                                     }
-                                    if (SessionCallState.Lookup[result.Result[i]] == "CallIdle") {
-                                        stopaudio = 1;
-                                    }
-                                }
-                                if (startaudio)
-                                {
-                                    setupWebAudioAPI();
-                                }
-                                else if (stopaudio)
-                                {
-                                    shutDownAudio();
                                 }
                             }
-                        }
-                    });
+                        });
 
-            }, 500); //500ms seconds polling
-    }
+                    spokes.Plugin.callEvents(plugin_name,
+                        function (result) {
+                            if (result.isError) {
+                                appendLog("Error polling for call events: " + result.Err.Description);
+                            } else {
+                                // display list of events collected from REST service
+                                if (result.Result.length > 0) {
+                                    for (var i = 0; i < result.Result.length; i++) {
+                                        //appendLog("<font color=\"#0000FF\">Call Event: " + SessionCallState.Lookup[result.Result[i]] + "</font>");
+                                        appendLog("<font color=\"#0000FF\">Call Event: " + result.Result[i].Event_Log_Type_Name + ", " + print_r(result.Result[i]) + "</font>");
+                                        //if (SessionCallState.Lookup[result.Result[i]] == "CallInProgress") {
+                                        //}
+                                        //if (SessionCallState.Lookup[result.Result[i]] == "CallIdle") {
+                                        //}
+                                    }
+                                }
+                            }
+                        });
 
+                }, 2000); //500ms seconds polling
+        }
     </script>
 </body>
 </html>
