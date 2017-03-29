@@ -1954,17 +1954,22 @@
                         deviceAttached = false;
                     }
                     pollRate = 2000; // waiting for device now, force faster polling rate to start now
-                    if (previousPollRate == 10000)
-                    {
+                    if (previousPollRate == 10000) {
                         var previousPollRate = 2000;
                         // start polling the device for events...
                         var run = setInterval(pollDeviceEventsOrReconnect, pollRate);
                     }
                 } else {
-                    appendLog("Error connecting to Plantronics Hub. (Have you installed and run Plantronics Hub from <a href=\"http://www.plantronics.com/software\" target=\"_new\">www.plantronics.com/software</a>, or " +
-                        "are you Firefox user and getting \"Error connecting to Plantronics Hub.\"? If so visit this URL: <a href=\"https://127.0.0.1:32018/Spokes/DeviceServices/Info\" target=\"_new\">" +
-                        "https://127.0.0.1:32018/Spokes/DeviceServices/Info</a> and click Advanced > Add Exception... to add a security exception to allow the connection.");
-                    pollRate = 10000; // waiting for Hub to be running
+                    if (result.Err.Description === "There are no supported devices") {
+                        appendLog("Please attach a Plantronics headset to the PC.");
+                    }
+                    else
+                    { 
+                        appendLog("Error connecting to Plantronics Hub. (Have you installed and run Plantronics Hub from <a href=\"http://www.plantronics.com/software\" target=\"_new\">www.plantronics.com/software</a>, or " +
+                            "are you Firefox user and getting \"Error connecting to Plantronics Hub.\"? If so visit this URL: <a href=\"https://127.0.0.1:32018/Spokes/DeviceServices/Info\" target=\"_new\">" +
+                            "https://127.0.0.1:32018/Spokes/DeviceServices/Info</a> and click Advanced > Add Exception... to add a security exception to allow the connection.");
+                        pollRate = 10000; // waiting for Hub to be running
+                    }
                 }
             });
         }
