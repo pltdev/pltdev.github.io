@@ -45,7 +45,7 @@
         var deviceAttached = true;
         var pollRate = 2000;
         var previousPollRate = 2000;
-        // start polling the API for device events to to reconnect to API (in the event of connection failure)...
+        // start polling the API for device events or to reconnect to API (in the event of connection failure)...
         var run = setInterval(pollDeviceEventsOrReconnect, pollRate);
 
         // Sample menu command implementations:
