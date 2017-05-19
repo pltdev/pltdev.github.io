@@ -1,0 +1,36 @@
+<html>
+<head>
+<script src="https://www.gstatic.com/firebasejs/4.0.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/4.0.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/4.0.0/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/4.0.0/firebase-messaging.js"></script>
+<script>
+  // Initialize Firebase
+  var config = {
+    apiKey: "AIzaSyDv9punIancxVE7dyI4259zQ83kHtvtRyo",
+    authDomain: "pltdemouk.firebaseapp.com",
+    databaseURL: "https://pltdemouk.firebaseio.com",
+    projectId: "pltdemouk",
+    storageBucket: "pltdemouk.appspot.com",
+    messagingSenderId: "13169306160"
+  };
+  
+  function init()
+  {
+    firebase.initializeApp(config);
+  
+    var lewisEvents = firebase.database().ref('Lewis/');
+    lewisEvents.on('value', function(snapshot) {
+        appendLog(snapshot)
+    });
+  }
+
+  function appendLog(str) {
+    log.innerHTML = log.innerHTML + "<br />" + str;
+  }
+</script>
+</head>
+<body onLoad="alert('load');init()">
+<div id="log"><b>Log:</b></div>
+</body>
+</html>
