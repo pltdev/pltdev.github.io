@@ -43,12 +43,8 @@
         connect.contact(function (contact) {
             activeCall = contact;
             console.log("contact callback invoked: ");
-            contact.onEnded(function (contact) {
-                console.log("call ended");
-            });
-            contact.onConnecting(function (contact) {
-                console.log("call ringing");
-                
+            contact.onIncoming(function (contact) {
+                console.log("call incoming");
                 callid = callid + 1;
                 call_id = callid;
                 appendLog("<font color=\"#00FF00\">Initiating make call command, call id = " + callid.toString() + "</font>");
@@ -57,8 +53,26 @@
                     showCallStatus(result);
                 });
             });
+            contact.onEnded(function (contact) {
+                appendLog("<font color=\"#00FF00\">Ending call, call id = " + callid.toString() + "</font>");
+
+                spokes.Plugin.terminateCall(plugin_name, getCallId(callid), function (result) {
+                    showCallStatus(result);
+                });
+            });
+            contact.onConnecting(function (contact) {
+                console.log("call connecting");
+                
+                callid = callid + 1;
+                call_id = callid;
+                appendLog("<font color=\"#00FF00\">Initiating make call command, call id = " + callid.toString() + "</font>");
+
+                spokes.Plugin.outgoingCall(plugin_name, getCallId(callid), getContact("Dummy Contact"), "ToHeadset", function (result) {
+                    showCallStatus(result);
+                });
+            });
             contact.onConnected(function (contact) {
-                console.log("call started");
+                console.log("call connected");
             });
         });    
         
