@@ -12,6 +12,20 @@
     connect.core.initCCP(containerDiv, {
        ccpUrl: "https://djlogikk.awsapps.com/connect/ccp#/"
     });
+    connect.agent(function (agent) {
+      console.log("Agent name = "+agent.getName());
+    });
+    connect.contact(function (contact) {
+      contact.onEnded(function (contact) {
+        console.log("call ended");
+      });
+      contact.onConnecting(function (contact) {
+        console.log("call ringing");
+      });
+      contact.onConnected(function (contact) {
+        console.log("call started");
+      });
+    });    
   </script>
 </body>
 </html>
