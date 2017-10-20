@@ -10,7 +10,9 @@
   <script src="amazon-connect-v1.2.0.js"></script>
   <script>
     connect.core.initCCP(containerDiv, {
-       ccpUrl: "https://plt-oda.awsapps.com/connect/ccp#/"
+       ccpUrl: "https://plt-oda.awsapps.com/connect/ccp#/",
+        loginPopup: true,
+        softphone: { allowFramedSoftphone: true }
     });
     connect.agent(function (agent) {
       console.log("Agent name = "+agent.getName());
