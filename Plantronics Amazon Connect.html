@@ -11,13 +11,22 @@
     <h2>Plantronics Amazon Connect Demo 1</h2>
     Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com/software" target="_new">www.plantronics.com/software</a>
     <p>Note Firefox users: If you get "Error connecting to Plantronics Hub." then visit this URL: <a href="https://127.0.0.1:32018/Spokes/DeviceServices/Info" target="_new">https://127.0.0.1:32018/Spokes/DeviceServices/Info</a> and click Advanced > Add Exception... to add a security exception to allow the connection.</p>
-    
-    <div style="height:465px;width:320px" id="containerDiv"></div>
-    
-    <br />
-    <button id="clear_log">Clear Log</button>
 
-    <div id="log"><b>Log:</b></div>
+    <table border="1">
+    <tr colspan="3">
+    <td width="320px" valign="top">   
+    <div style="height:465px;width:320px" id="containerDiv"></div>    
+    </td>
+    <td valign="top">   
+    <button id="clear_amazon_log">Clear</button>
+    <div id="amazonlog"><b>Amazon Connect Log:</b></div>
+    </td>
+    <td valign="top">   
+    <button id="clear_log">Clear</button>
+    <div id="log"><b>Plantronics Log:</b></div>
+    </td>
+    </tr>    
+    </table>
     
     <script src="amazon-connect-v1.2.0.js"></script>
     <script>
@@ -38,13 +47,35 @@
             softphone: { allowFramedSoftphone: true }
         });
         connect.agent(function (agent) {
-            console.log("Agent name = "+agent.getName());
+            appendLog("contact.agent, Agent name = " + agent.getName() + ", state = " + agent.getState().type);
+            agent.onRefresh(function(agent) {
+                appendLog("agent.onRefresh, state = " + agent.getState().type);
+            });
+            agent.onRoutable(function(agent) {
+                appendLog("agent.onRoutable, state = " + agent.getState().type);
+            });
+            agent.onNotRoutable(function(agent) {
+                appendLog("agent.onNotRoutable, state = " + agent.getState().type);
+            });
+            agent.onOffline(function(agent) {
+                appendLog("agent.onOffline, state = " + agent.getState().type);
+            });
+            agent.onError(function(agent) {
+                appendLog("agent.onError, state = " + agent.getState().type);
+            });
+            agent.onAfterCallWork(function(agent) {
+                appendLog("agent.onAfterCallWork, state = " + agent.getState().type);
+            });
         });
         connect.contact(function (contact) {
             activeCall = contact;
-            console.log("contact callback invoked: ");
+            appendLog("connect.contact");                       
+            contact.onRefresh(function (contact) {
+                appendLog("contact.onRefresh, inbound = " + contact.isInbound());
+            }
             contact.onIncoming(function (contact) {
-                console.log("call incoming");
+                appendLog("contact.onIncoming, inbound = " + contact.isInbound());
+                /*
                 callid = callid + 1;
                 call_id = callid;
                 appendLog("<font color=\"#00FF00\">Initiating make call command, call id = " + callid.toString() + "</font>");
@@ -52,17 +83,27 @@
                 spokes.Plugin.incomingCall(plugin_name, getCallId(callid), getContact("Dummy Contact"), "Unknown", "ToHeadset", function (result) {
                     showCallStatus(result);
                 });
+                */
             });
+            contact.onAccepted(function (contact) {
+                appendLog("contact.onAccepted, inbound = " + contact.isInbound());
+            }
             contact.onEnded(function (contact) {
+                appendLog("contact.onEnded, inbound = " + contact.isInbound());
+                activeCall = null;
+                /*
                 appendLog("<font color=\"#00FF00\">Ending call, call id = " + callid.toString() + "</font>");
-
                 spokes.Plugin.terminateCall(plugin_name, getCallId(callid), function (result) {
                     showCallStatus(result);
                 });
+                */
+            });
+            contact.onConnected(function (contact) {
+                appendLog("contact.onConnected, inbound = " + contact.isInbound());
             });
             contact.onConnecting(function (contact) {
-                console.log("call connecting");
-                
+                appendLog("contact.onConnecting, inbound = " + contact.isInbound());
+                /*
                 callid = callid + 1;
                 call_id = callid;
                 appendLog("<font color=\"#00FF00\">Initiating make call command, call id = " + callid.toString() + "</font>");
@@ -70,17 +111,18 @@
                 spokes.Plugin.outgoingCall(plugin_name, getCallId(callid), getContact("Dummy Contact"), "ToHeadset", function (result) {
                     showCallStatus(result);
                 });
-            });
-            contact.onConnected(function (contact) {
-                console.log("call connected");
+                */
             });
         });    
         
-        // Sample menu command implementations:
         $('#clear_log').click(function () {
-            log.innerHTML = "<b>Log:</b>";
+            log.innerHTML = "<b>Plantronics Log:</b>";
         });
-        
+
+        $('#clear_amazon_log').click(function () {
+            amazonlog.innerHTML = "<b>Amazon Connect Log:</b>";
+        });
+
         // Convenience functions to create call and contact structures used for IncomingCall/OutgoingCall functions
         function getCallId(callid) {
             return new SpokesCallId({ Id: '' + callid } );
@@ -90,10 +132,14 @@
             return new SpokesContact({ Name: contactname });
         }        
         
-                function appendLog(str) {
+        function appendLog(str) {
             log.innerHTML = log.innerHTML + "<br />" + str;
         }
 
+        function appendAmazonLog(str) {
+            amazonlog.innerHTML = amazonlog.innerHTML + "<br />" + str;
+        }
+        
         function connectToPlantronics() {
             // Connect to the Plantronics REST API
             spokes = new Spokes("https://127.0.0.1:32018/Spokes");
