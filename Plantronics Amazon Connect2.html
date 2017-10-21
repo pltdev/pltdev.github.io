@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Plantronics Amazon Connect Demo</title>
+</head>
+<body onload="connectToPlantronics()" onbeforeunload="disconnectFromPlantronics()">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+    <script src="https://pltdev.github.io/spokes.js"></script> <!-- Plantronics API interface -->
+    <script src="https://pltdev.github.io/util.js"></script>
+    <h2>Plantronics Amazon Connect Demo 1</h2>
+    Pre-requisite, install Plantronics Hub from: <a href="http://www.plantronics.com/software" target="_new">www.plantronics.com/software</a>
+    <p>Note Firefox users: If you get "Error connecting to Plantronics Hub." then visit this URL: <a href="https://127.0.0.1:32018/Spokes/DeviceServices/Info" target="_new">https://127.0.0.1:32018/Spokes/DeviceServices/Info</a> and click Advanced > Add Exception... to add a security exception to allow the connection.</p>
+
+    <div style="height:465px;width:320px" id="containerDiv"></div>    
+    
+    <table border="1">
+    <tr colspan="2">
+    <td valign="top">   
+    <button id="clear_amazon_log">Clear</button>
+    <div id="amazonlog"><b>Amazon Connect Log:</b></div>
+    </td>
+    <td valign="top">   
+    <button id="clear_log">Clear</button>
+    <div id="log"><b>Plantronics Log:</b></div>
+    </td>
+    </tr>    
+    </table>
+    
+    <script src="amazon-connect-v1.2.0.js"></script>
+    <script>
+        var activeCall = undefined;
+        var spokes; // global Spokes object, initialised when this page is loaded (onload)
+        var plugin_registered = false;
+        var plugin_name = "Hello World JavaScript Plugin";
+        var callid = 0;
+        var deviceAttached = true;
+        var pollRate = 2000;
+        var previousPollRate = 2000;
+        // start polling the API for device events or to reconnect to API (in the event of connection failure)...
+        var run = setInterval(pollDeviceEventsOrReconnect, pollRate);
+        
+        connect.core.initCCP(containerDiv, {
+            ccpUrl: "https://djlogikk.awsapps.com/connect/ccp#/",
+            loginPopup: true,
+            softphone: { allowFramedSoftphone: true }
+        });
+        connect.agent(function (agent) {
+            appendLog("contact.agent, Agent name = " + agent.getName() + ", state = " + agent.getState().type);
+            agent.onRefresh(function(agent) {
+                appendLog("agent.onRefresh, state = " + agent.getState().type);
+            });
+            agent.onRoutable(function(agent) {
+                appendLog("agent.onRoutable, state = " + agent.getState().type);
+            });
+            agent.onNotRoutable(function(agent) {
+                appendLog("agent.onNotRoutable, state = " + agent.getState().type);
+            });
+            agent.onOffline(function(agent) {
+                appendLog("agent.onOffline, state = " + agent.getState().type);
+            });
+            agent.onError(function(agent) {
+                appendLog("agent.onError, state = " + agent.getState().type);
+            });
+            agent.onAfterCallWork(function(agent) {
+                appendLog("agent.onAfterCallWork, state = " + agent.getState().type);
+            });
+        });
+        connect.contact(function (contact) {
+            activeCall = contact;
+            appendLog("connect.contact");                       
+            contact.onRefresh(function (contact) {
+                appendLog("contact.onRefresh, inbound = " + contact.isInbound());
+            });
+            contact.onIncoming(function (contact) {
+                appendLog("contact.onIncoming, inbound = " + contact.isInbound());
+                /*
+                callid = callid + 1;
+                call_id = callid;
+                appendLog("<font color=\"#00FF00\">Initiating make call command, call id = " + callid.toString() + "</font>");
+
+                spokes.Plugin.incomingCall(plugin_name, getCallId(callid), getContact("Dummy Contact"), "Unknown", "ToHeadset", function (result) {
+                    showCallStatus(result);
+                });
+                */
+            });
+            contact.onAccepted(function (contact) {
+                appendLog("contact.onAccepted, inbound = " + contact.isInbound());
+            });
+            contact.onEnded(function (contact) {
+                appendLog("contact.onEnded, inbound = " + contact.isInbound());
+                activeCall = null;
+                /*
+                appendLog("<font color=\"#00FF00\">Ending call, call id = " + callid.toString() + "</font>");
+                spokes.Plugin.terminateCall(plugin_name, getCallId(callid), function (result) {
+                    showCallStatus(result);
+                });
+                */
+            });
+            contact.onConnected(function (contact) {
+                appendLog("contact.onConnected, inbound = " + contact.isInbound());
+            });
+            contact.onConnecting(function (contact) {
+                appendLog("contact.onConnecting, inbound = " + contact.isInbound());
+                /*
+                callid = callid + 1;
+                call_id = callid;
+                appendLog("<font color=\"#00FF00\">Initiating make call command, call id = " + callid.toString() + "</font>");
+
+                spokes.Plugin.outgoingCall(plugin_name, getCallId(callid), getContact("Dummy Contact"), "ToHeadset", function (result) {
+                    showCallStatus(result);
+                });
+                */
+            });
+        });    
+        
+        $('#clear_log').click(function () {
+            log.innerHTML = "<b>Plantronics Log:</b>";
+        });
+
+        $('#clear_amazon_log').click(function () {
+            amazonlog.innerHTML = "<b>Amazon Connect Log:</b>";
+        });
+
+        // Convenience functions to create call and contact structures used for IncomingCall/OutgoingCall functions
+        function getCallId(callid) {
+            return new SpokesCallId({ Id: '' + callid } );
+        }
+
+        function getContact(contactname) {
+            return new SpokesContact({ Name: contactname });
+        }        
+        
+        function appendLog(str) {
+            log.innerHTML = log.innerHTML + "<br />" + str;
+        }
+
+        function appendAmazonLog(str) {
+            amazonlog.innerHTML = amazonlog.innerHTML + "<br />" + str;
+        }
+        
+        function connectToPlantronics() {
+            // Connect to the Plantronics REST API
+            spokes = new Spokes("https://127.0.0.1:32018/Spokes");
+
+            // get info about attached device (if any)
+            spokes.Device.deviceInfo(function (result) {
+                if (!result.isError) {
+                    if (result.Result /*[0]*/ != null) {
+                        // Log Spokes active device found (first in list returned, index 0)
+                        appendLog("Device found = " + result.Result /*[0]*/.ProductName + ", id = " + result.Result /*[0]*/.Uid);
+
+                        deviceAttached = true;
+
+                        // attach to the device, provide a callback function for the result
+                        spokes.Device.attach(result.Result /*[0]*/.Uid, deviceAttachedCallback);
+                    } else {
+                        appendLog("Error: Device was null on connecting to Spokes. Is there a Plantronics device connected?");
+                        deviceAttached = false;
+                    }
+                    pollRate = 2000; // waiting for device events now, force faster polling rate to start now (if applicable)
+                    if (previousPollRate == 10000) {
+                        var previousPollRate = 2000;
+                        // start polling the device and call state events...
+                        var run = setInterval(pollDeviceEventsOrReconnect, pollRate);
+                    }
+                } else {
+                    if (result.Err.Description === "There are no supported devices") {
+                        appendLog("Please attach a Plantronics headset to the PC.");
+                    }
+                    else
+                    { 
+                        appendLog("Error connecting to Plantronics Hub. (Have you installed and run Plantronics Hub from <a href=\"http://www.plantronics.com/software\" target=\"_new\">www.plantronics.com/software</a>, or " +
+                            "are you Firefox user and getting \"Error connecting to Plantronics Hub.\"? If so visit this URL: <a href=\"https://127.0.0.1:32018/Spokes/DeviceServices/Info\" target=\"_new\">" +
+                            "https://127.0.0.1:32018/Spokes/DeviceServices/Info</a> and click Advanced > Add Exception... to add a security exception to allow the connection.");
+                        pollRate = 10000; // slow down polling rate while we are waiting for Hub to be running
+                    }
+                }
+            });
+        }
+
+        //Callback to receive result of device attach. If successful register a plugin (Plantronics API application session)
+        function deviceAttachedCallback(session) {
+            if (session.isError || !spokes.Device.isAttached) {
+                appendLog("Session Registration Error");
+                deviceAttached = false;
+                disconnectFromPlantronics();
+            } else {
+                appendLog("Session ID: " + session.Result);
+
+                registerPlugin(); // register a plugin (Plantronics API application session)
+            }
+        }
+
+        function setPluginActive()
+        {
+            //Set plugin active status to true
+            spokes.Plugin.isActive(plugin_name, true, function (result) {
+                if (!result.isError) {
+                    // plugin registered and active. Show UI.
+                    plugin_registered = true;
+                    appendLog("Plugin \"" + plugin_name + "\" registered successfully.");
+                } else {
+                    appendLog("Error checking if plugin is active: " + result.Err.Description);
+                }
+            });
+        }
+
+        // Register a Spokes Plugin (Plantronics API application session) to get access to Call Services, Device and Call events
+        function registerPlugin() {
+            if (!plugin_registered) {
+                spokes.Plugin.register(plugin_name, function (result) {
+                    if (!result.isError) {
+                        setPluginActive();
+                    } else {
+                        appendLog("Info: registering plugin: " + result.Err.Description);
+                        if (result.Err.Description === "Plugin exists")
+                        {
+                            setPluginActive();
+                        }
+                        else
+                        {
+                            deviceAttached = false;
+                            disconnectFromPlantronics();
+                        }
+                    }
+                });
+            }
+        }
+
+        // Unregister Spokes plugin (Plantronics API application session)
+        function unregisterPlugin() {
+            spokes.Plugin.unRegister(plugin_name);
+            plugin_registered = false;
+            appendLog("Plugin un-registered.");
+        }
+
+        // Cleanup the Plantronics REST API
+        function disconnectFromPlantronics() {
+            unregisterPlugin();
+            spokes.Device.release(function (result) {
+                if (!result.isError) {
+                    appendLog("Released device");
+                } else {
+                    appendLog("Error releasing device");
+                }
+                appendLog("Disconnected from Spokes");
+            });
+        }
+
+        // Function to perform device and call event polling if we are connected to Hub, or else attempt to reconnect to Hub
+        function pollDeviceEventsOrReconnect() {
+            // supports variable poll rate, 2000ms waiting for a device, 10000ms waiting for Hub to be running
+            if (previousPollRate != pollRate) {
+                clearInterval(run);
+                previousPollRate = pollRate;
+                run = setInterval(pollDeviceEventsOrReconnect, pollRate); 
+            }
+            if (spokes == null || !deviceAttached || !spokes.Device.isAttached) {
+                appendLog("-- POLLING FOR HUB / DEVICE RE-ATTACH --");
+                connectToPlantronics();
+                return;
+            }
+
+            // Poll for device events
+            // informs us of a variety of Plantronics device state changes
+            spokes.Device.events(
+                function (result) {
+                    if (result.isError) {
+                        appendLog("Error polling for device events: " + result.Err.Description);
+                        if (result.Err.Description === "No response.  Server appears to be offline.") {
+                            pollRate = 10000;
+                            appendLog("changing POLL RATE to " + pollRate);
+                        }
+                        if (result.Err.Description === "Invalid session id" ||
+                            result.Err.Description === "Empty session id" ||
+                            result.Err.Description === "No response.  Server appears to be offline.") {
+                            appendLog("-- ** DEVICE DETACHED / SESSION INVALID ** --");
+                            deviceAttached = false;
+                            disconnectFromPlantronics();
+                        }
+                    } else {
+                        // display list of events collected from REST service
+                        if (result.Result.length > 0) {
+                            for (var i = 0; i < result.Result.length; i++) {
+                                appendLog("<font color=\"#0000FF\">Device Event: " + result.Result[i].Event_Log_Type_Name + ", " + print_r(result.Result[i]) + "</font>");
+                            }
+                        }
+                    }
+                });
+
+            // Poll for call state events (call control events)
+            // informs us the calling state has changed, for example user as answered/terminated a call
+            // using headset buttons - this event should be used in my app to actually connect/terminate the call!
+            spokes.Plugin.callEvents(plugin_name,
+                function (result) {
+                    if (result.isError) {
+                        appendLog("Error polling for call events: " + result.Err.Description);
+                        if (result.Err.Description === "No response.  Server appears to be offline.") {
+                            pollRate = 10000;
+                            appendLog("changing POLL RATE to " + pollRate);
+                        }
+                        if (result.Err.Description === "Invalid session id" ||
+                            result.Err.Description === "Empty session id" ||
+                            result.Err.Description === "No response.  Server appears to be offline.") {
+                            appendLog("-- ** DEVICE DETACHED / SESSION INVALID ** --");
+                            deviceAttached = false;
+                            disconnectFromPlantronics();
+                        }
+                    } else {
+                        // display list of events collected from REST service
+                        if (result.Result.length > 0) {
+                            for (var i = 0; i < result.Result.length; i++) {
+                                appendLog("<font color=\"#0000FF\">Call Event: " + result.Result[i].Event_Log_Type_Name + ", " + print_r(result.Result[i]) + "</font>");
+                                // Workout the actual call state and call id in question
+                                var callState = SessionCallState.Lookup[result.Result[i]["Action"]];
+                                var callId = result.Result[i]["CallId"]["Id"];
+                                appendLog("CallState: " + callState + ", Call ID: " + callId);
+                            }
+                        }
+                    }
+                });
+        }
+    </script>
+</body>
+</html>
