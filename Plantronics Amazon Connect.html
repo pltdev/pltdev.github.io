@@ -72,7 +72,7 @@
             appendLog("connect.contact");                       
             contact.onRefresh(function (contact) {
                 appendLog("contact.onRefresh, inbound = " + contact.isInbound());
-            }
+            });
             contact.onIncoming(function (contact) {
                 appendLog("contact.onIncoming, inbound = " + contact.isInbound());
                 /*
@@ -87,7 +87,7 @@
             });
             contact.onAccepted(function (contact) {
                 appendLog("contact.onAccepted, inbound = " + contact.isInbound());
-            }
+            });
             contact.onEnded(function (contact) {
                 appendLog("contact.onEnded, inbound = " + contact.isInbound());
                 activeCall = null;
