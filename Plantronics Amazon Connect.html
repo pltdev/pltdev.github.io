@@ -391,14 +391,8 @@
                                     {
                                         if (activeCall!=null)
                                         {
-                                            activeCall.destroy({
-                                               success: function() { 
-                                                    appendLog("Successfully terminated Amazon Call");
-                                               },
-                                               failure: function() { 
-                                                    appendLog("Failed to terminate Amazon Call");
-                                               }
-                                            });                                    
+                                            appendLog("Attempt to terminate Amazon Call...");
+                                            activeCall.getInitialConnection().destroy();
                                         }
                                     }
                                 }
