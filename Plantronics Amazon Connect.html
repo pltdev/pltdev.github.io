@@ -131,12 +131,18 @@
             return new SpokesContact({ Name: contactname });
         }        
         
+        function getTime() {
+            var d = new Date();
+            var n = d.toLocaleTimeString();
+            return n;
+        }
+        
         function appendLog(str) {
-            log.innerHTML = log.innerHTML + "<br />" + str;
+            log.innerHTML = log.innerHTML + "<br />" + getTime() + " " + str;
         }
 
         function appendAmazonLog(str) {
-            amazonlog.innerHTML = amazonlog.innerHTML + "<br />" + str;
+            amazonlog.innerHTML = amazonlog.innerHTML + "<br />" + getTime() + " " + str;
         }
         
         function connectToPlantronics() {
