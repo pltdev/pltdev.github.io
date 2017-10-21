@@ -46,34 +46,34 @@
             softphone: { allowFramedSoftphone: true }
         });
         connect.agent(function (agent) {
-            appendLog("contact.agent, Agent name = " + agent.getName() + ", state = " + agent.getState().type);
+            appendAmazonLog("contact.agent, Agent name = " + agent.getName() + ", state = " + agent.getState().type);
             agent.onRefresh(function(agent) {
-                appendLog("agent.onRefresh, state = " + agent.getState().type);
+                appendAmazonLog("agent.onRefresh, state = " + agent.getState().type);
             });
             agent.onRoutable(function(agent) {
-                appendLog("agent.onRoutable, state = " + agent.getState().type);
+                appendAmazonLog("agent.onRoutable, state = " + agent.getState().type);
             });
             agent.onNotRoutable(function(agent) {
-                appendLog("agent.onNotRoutable, state = " + agent.getState().type);
+                appendAmazonLog("agent.onNotRoutable, state = " + agent.getState().type);
             });
             agent.onOffline(function(agent) {
-                appendLog("agent.onOffline, state = " + agent.getState().type);
+                appendAmazonLog("agent.onOffline, state = " + agent.getState().type);
             });
             agent.onError(function(agent) {
-                appendLog("agent.onError, state = " + agent.getState().type);
+                appendAmazonLog("agent.onError, state = " + agent.getState().type);
             });
             agent.onAfterCallWork(function(agent) {
-                appendLog("agent.onAfterCallWork, state = " + agent.getState().type);
+                appendAmazonLog("agent.onAfterCallWork, state = " + agent.getState().type);
             });
         });
         connect.contact(function (contact) {
             activeCall = contact;
-            appendLog("connect.contact");                       
+            appendAmazonLog("connect.contact");                       
             contact.onRefresh(function (contact) {
-                appendLog("contact.onRefresh, inbound = " + contact.isInbound());
+                appendAmazonLog("contact.onRefresh, inbound = " + contact.isInbound());
             });
             contact.onIncoming(function (contact) {
-                appendLog("contact.onIncoming, inbound = " + contact.isInbound());
+                appendAmazonLog("contact.onIncoming, inbound = " + contact.isInbound());
                 /*
                 callid = callid + 1;
                 call_id = callid;
@@ -85,10 +85,10 @@
                 */
             });
             contact.onAccepted(function (contact) {
-                appendLog("contact.onAccepted, inbound = " + contact.isInbound());
+                appendAmazonLog("contact.onAccepted, inbound = " + contact.isInbound());
             });
             contact.onEnded(function (contact) {
-                appendLog("contact.onEnded, inbound = " + contact.isInbound());
+                appendAmazonLog("contact.onEnded, inbound = " + contact.isInbound());
                 activeCall = null;
                 /*
                 appendLog("<font color=\"#00FF00\">Ending call, call id = " + callid.toString() + "</font>");
@@ -98,10 +98,10 @@
                 */
             });
             contact.onConnected(function (contact) {
-                appendLog("contact.onConnected, inbound = " + contact.isInbound());
+                appendAmazonLog("contact.onConnected, inbound = " + contact.isInbound());
             });
             contact.onConnecting(function (contact) {
-                appendLog("contact.onConnecting, inbound = " + contact.isInbound());
+                appendAmazonLog("contact.onConnecting, inbound = " + contact.isInbound());
                 /*
                 callid = callid + 1;
                 call_id = callid;
