@@ -370,6 +370,38 @@
                                 var callState = SessionCallState.Lookup[result.Result[i]["Action"]];
                                 var callId = result.Result[i]["CallId"]["Id"];
                                 appendLog("CallState: " + callState + ", Call ID: " + callId);
+                                
+                                if (callId == callid)
+                                {
+                                    if (callState === "AcceptCall")
+                                    {
+                                        if (activeCall!=null)
+                                        {
+                                            activeCall.accept({
+                                               success: function() { 
+                                                    appendLog("Successfully answered Amazon Call");
+                                               },
+                                               failure: function() { 
+                                                    appendLog("Failed to answer Amazon Call");
+                                               }
+                                            });                                    
+                                        }
+                                    }
+                                    else if (callState === "TerminateCall")
+                                    {
+                                        if (activeCall!=null)
+                                        {
+                                            activeCall.destroy({
+                                               success: function() { 
+                                                    appendLog("Successfully terminated Amazon Call");
+                                               },
+                                               failure: function() { 
+                                                    appendLog("Failed to terminate Amazon Call");
+                                               }
+                                            });                                    
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
