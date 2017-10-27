@@ -5,6 +5,7 @@ It is hosted on GitHub Pages to so try out the demos just visit: https://pltdev.
 ### List of demos
 1. Plantronics JavaScript Sample (using https REST API)
 2. Plantronics Amazon Connect
+
 See below for getting started guides.
 ### Getting Started with Plantronics JavaScript Sample (using https REST API)
 This demo illustrates how a web-based application (e.g. WebRTC client or collaboration app) can connect to Plantronics REST API in order to implement headset call control.
