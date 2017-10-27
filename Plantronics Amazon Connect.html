@@ -31,6 +31,7 @@
     <script src="amazon-connect-v1.2.0.js"></script>
     <script>
         var activeCall = undefined;
+    	var agentStateCollection = {}
         var inbound = false;
         var spokes; // global Spokes object, initialised when this page is loaded (onload)
         var plugin_registered = false;
@@ -67,6 +68,14 @@
             agent.onAfterCallWork(function(agent) {
                 appendAmazonLog("agent.onAfterCallWork, state = " + agent.getState().type);
             });
+            agent.getAgentStates().filter(function(state) {
+                if(state.name === "Available"){
+                    agentStateCollection.Available = state;
+                }
+                else if(state.name === "Offline"){
+                    agentStateCollection.Offline = state;	
+                }
+            });           
         });
         connect.contact(function (contact) {
             activeCall = contact;
@@ -111,6 +120,20 @@
                 }
             });
         });    
+        
+        // New 27th Oct 2017 handle QD events to set agent availability
+        function changeAgentState(nextState){
+            connect.agent(function(agent) {
+                agent.setState(nextState, {
+                    success: function() { 
+                        appendAmazonLog("changeAgentState success, nextState = " + nextState.name) );
+                    },
+                    failure: function() { 
+                        appendAmazonLog("changeAgentState fail, was trying to set nextState = " + nextState.name) 
+                    }
+                });
+            });
+        }
         
         function plantronicsRing()
         {
@@ -338,6 +361,18 @@
                         if (result.Result.length > 0) {
                             for (var i = 0; i < result.Result.length; i++) {
                                 appendLog("<font color=\"#0000FF\">Device Event: " + result.Result[i].Event_Log_Type_Name + ", " + print_r(result.Result[i]) + "</font>");
+                                
+                                // New 27th Oct 2017 handle QD events to set agent availability
+                                if (result.Result[i].Event_Id == 32)
+                                {
+                                    changeAgentState(agentStateCollection.Offline);
+                                    appendLog("QD was disconnected");
+                                }
+                                else if (result.Result[i].Event_Id == 31)
+                                {
+                                    appendLog("QD was connected");
+                                    changeAgentState(agentStateCollection.Available);
+                                }
                             }
                         }
                     }
