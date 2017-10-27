@@ -126,7 +126,7 @@
             connect.agent(function(agent) {
                 agent.setState(nextState, {
                     success: function() { 
-                        appendAmazonLog("changeAgentState success, nextState = " + nextState.name) );
+                        appendAmazonLog("changeAgentState success, nextState = " + nextState.name);
                     },
                     failure: function() { 
                         appendAmazonLog("changeAgentState fail, was trying to set nextState = " + nextState.name) 
