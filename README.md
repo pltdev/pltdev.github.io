@@ -16,6 +16,9 @@ The 4 files that comprise it are:
 2. amazon-connect-v1.2.0.js
 3. spokes.js
 4. util.js
+#### Screenshot
+Here is a screenshot of the demo in action
+![Here is a screenshot of the demo in action](https://pltdev.github.io/Plantronics%20Amazon%20Connect%20Demo.png "Here is a screenshot of the demo in action")
 #### List of pre-requisites
 * Install Plantronics Hub from: www.plantronics.com/software
 * Note Firefox users: If you get "Error connecting to Plantronics Hub." then visit this URL: https://127.0.0.1:32018/Spokes/DeviceServices/Info and click Advanced > Add Exception... to add a security exception to allow the connection.
