@@ -1,7 +1,7 @@
 # pltdev.github.io
 ## Plantronics Live Demos Page
 This GitHub repo contains the code for some Plantronics Integration demos.
-It is hosted on GitHub Pages to so try out the demos just visit: https://pltdev.github.io/
+It is hosted on GitHub Pages to so in order to try out the demos just visit: https://pltdev.github.io/
 ### List of demos
 1. Plantronics JavaScript Sample (using https REST API)
 2. Plantronics Amazon Connect
