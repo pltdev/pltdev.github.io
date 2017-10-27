@@ -9,9 +9,27 @@ It is hosted on GitHub Pages to so in order to try out the demos just visit: htt
 See below for getting started guides.
 ### Getting Started with Plantronics JavaScript Sample (using https REST API)
 This demo illustrates how a web-based application (e.g. WebRTC client or collaboration app) can connect to Plantronics REST API in order to implement headset call control.
+#### The 3 files that comprise it are:
+1. Plantronics JavaScript Sample.html
+2. spokes.js
+3. util.js
+#### Screenshot
+Here is a screenshot of the demo in action
+![Here is a screenshot of the demo in action](https://pltdev.github.io/Plantronics%20JavaScript%20Sample.png "Here is a screenshot of the demo in action")
+#### List of pre-requisites
+* Install Plantronics Hub from: www.plantronics.com/software
+* Note Firefox users: If you get "Error connecting to Plantronics Hub." then visit this URL: https://127.0.0.1:32018/Spokes/DeviceServices/Info and click Advanced > Add Exception... to add a security exception to allow the connection.
+#### List of features included with this demo
+* Example web-based JavaScript application that connects to Plantronics REST API (client-based API)
+* Call control integration with: ring/incoming call, outgoing call, answer call (answer incoming call), hold/resume call, mute/unmute call, end call
+* Wireless audio link established when on call (required for Plantronics legacy products)
+#### Steps to deploy this demo:
+1. Download the files from this repo then open Plantronics JavaScript Sample.html in the browser of your choice. 
+#### Troubleshooting
+* If it fails to connect to the REST API, ensure you have met the pre-requisites listed above. If it still continues to fail to open the browser developer tools / inspect element and open go to the Console, then reload the page "Plantronics JavaScript Sample.html" and look for errors in the Console.
 ### Getting Started with Plantronics Amazon Connect integration demo
 This demo illustrates how to integrate Plantronics Amazon Connect Contact Control Panel (CCP) with the Plantronics REST API in order to implement headset call control for Amazon Connect.
-The 4 files that comprise it are:
+#### The 4 files that comprise it are:
 1. Plantronics Amazon Connect.html
 2. amazon-connect-v1.2.0.js
 3. spokes.js
@@ -23,7 +41,7 @@ Here is a screenshot of the demo in action
 * Install Plantronics Hub from: www.plantronics.com/software
 * Note Firefox users: If you get "Error connecting to Plantronics Hub." then visit this URL: https://127.0.0.1:32018/Spokes/DeviceServices/Info and click Advanced > Add Exception... to add a security exception to allow the connection.
 #### List of features included with this demo
-* CCP (Contact Control Panel) embedded on custom page with JavaScript that connects to Amazon Connect Streams API and Plantronics REST API (client-based API).
+* CCP (Contact Control Panel) embedded on custom page with JavaScript that connects to Amazon Connect Streams API and Plantronics REST API (client-based API)
 * Call control integration with call answer/end controlled by headset button
 * Wireless audio link established when on call (required for Plantronics legacy products)
 * Agent Availability (Offline/Available) based on headset QD (Quick Disconnect) connector (note, the defined agent states must be Offline/Available - currently hard-coded in this demo
@@ -34,4 +52,4 @@ Here is a screenshot of the demo in action
 #### Troubleshooting
 * If your CCP (Contact Control Panel) fails to embed but opens in a seperate Tab, try closing the Tab and reloading the page "https://your-domain/Plantronics%20Amazon%20Connect.html". 
 * If it continues to fail to embed you can try logging into CCP one time within seperate Tab, then closing the Tab and reloading page "https://your-domain/Plantronics%20Amazon%20Connect.html".
-* If it still continues to fail to open the browser developer tools / inspect element and open go to the Console, then reload the page "https://your-domain/Plantronics%20Amazon%20Connect.html" and look for errors.
+* If it still continues to fail to open the browser developer tools / inspect element and open go to the Console, then reload the page "https://your-domain/Plantronics%20Amazon%20Connect.html" and look for errors in the Console.
