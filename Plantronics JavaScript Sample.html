@@ -32,6 +32,7 @@
         <button id="resume_call">resume call</button><br />
         <button id="mute_call">mute call</button><br />
         <button id="unmute_call">unmute call</button><br />
+        <button id="mute_toggle">mute toggle</button><br />
         <button id="end_call">end call</button>
     </p>
 
@@ -48,6 +49,8 @@
         var previousPollRate = 2000;
         // start polling the API for device events or to reconnect to API (in the event of connection failure)...
         var run = setInterval(pollDeviceEventsOrReconnect, pollRate);
+        
+        var mutetoggle = false;
 
         // Sample menu command implementations:
         $('#clear_log').click(function () {
@@ -110,6 +113,7 @@
             spokes.Plugin.muteCall(plugin_name, true, function (result) {
                 showCallStatus(result);
             });
+            mutetoggle = true;
         });
 
         // unmute the headset (note for legacy wireless products, audio link must be active)
@@ -119,8 +123,20 @@
             spokes.Plugin.muteCall(plugin_name, false, function (result) {
                 showCallStatus(result);
             });
+            
+            mutetoggle = false;
         });
 
+        // toggle the headset mute (note for legacy wireless products, audio link must be active)
+        $('#mute_toggle').click(function () {
+            appendLog("<font color=\"#00FF00\">Unmuting call</font>");
+   
+            mutetoggle = !mutetoggle;
+            spokes.Plugin.muteCall(plugin_name, mutetoggle, function (result) {
+                showCallStatus(result);
+            });
+        });
+        
         // inform Plantronics my app has now terminated the call
         $('#end_call').click(function () {
             appendLog("<font color=\"#00FF00\">Ending call, call id = " + callid.toString() + "</font>");
