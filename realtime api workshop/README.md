@@ -9,7 +9,7 @@ It allows you to experience a variety of interactions with your headset and lear
 3. Rename this file from Spokes.config.sandbox to *Spokes.Config*, and place it here: C:\ProgramData\Plantronics\Spokes3G
 4. Now launch Hub
 5. Confirm Hub is attached to sandbox tenant under: Hub > Help > Support > Troubleshooting Assistance > Last attempt. It should report Success.
-6. Now navigate to the workshop code live demo: https://pltdev.github.io/realtime%20api%20workshop/ (Note: you can visit this on a different device to your PC running Hub and UC client.
+6. Now navigate to the workshop code live demo: https://pltdev.github.io/realtime%20api%20workshop/ (Note: you can visit this on a different device to your PC running Hub and UC client, try on your mobile).
 7. Connect your Plantronics headset
 8. Start performing calls with your UC client.
 9. Select your device in the Device ID filter: field. Note: all other sandbox users sending messages will get added here. By filtering for yours you can just focus on the events from your device.
