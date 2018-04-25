@@ -1,0 +1,303 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Plantronics Streaming API Demo - Using Sandbox</title>
+</head>
+<body>
+    <font face="Helvetica,Arial,sans-serif">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+        <!--<script src="https://pltdev.github.io/util.js"></script>-->
+        <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.4.15.1.js"></script>
+        <h2>Plantronics Streaming API Demo - Using Sandbox</h2>
+        <b>Pre-requisites:</b>
+        <ul>
+            <li>
+                (Mandatory, for Streaming API PubNub events): Install Hub configured to connect to Sandbox tenant.
+                <a href="https://github.com/pltdev/pltdev.github.io/tree/master/realtime%20api%20workshop" target="_blank">See guidance here.</a>
+            </li>
+            <li>
+                <b>Exercise #1</b>, edit the <i>processRealtimeMessage</i> function: use the incoming message to turn on/off the QD, CALL and CROSSTALK indicator lights on the screen!
+            </li>
+        </ul>
+
+        <table border="1">
+            <tr>
+                <td valign="top" colspan="5">
+                    <b>Device ID filter:</b>
+                    <br />
+                    <select id="deviceIdSelect">
+                        <option value="[choose a device id to filter on]">[choose a device id to filter on]</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td width="80" align="center" id="muteLight" height="25" bgcolor="lightgreen">
+                    <b>Mute</b>
+                </td>
+                <td width="80" align="center" id="qdLight" height="25" bgcolor="lightgreen">
+                    <b>QD</b>
+                </td>
+                <td width="80" align="center" id="callLight" height="25" bgcolor="lightgreen">
+                    <b>On Call</b>
+                </td>
+                <td width="80" align="center" id="crossTalkLight" height="25" bgcolor="lightgreen">
+                    <b>Crosstalk</b>
+                </td>
+                <td></td>
+            </tr>
+        </table>
+
+        <br />
+
+        <table border="1">
+            <tr>
+                <td valign="top">
+                    <b>Plantronics Streaming API Log (newest first):</b>
+                    <button id="clear_streamingapi_log">Clear</button>
+                    <div id="streamingapilog"></div>
+                </td>
+            </tr>
+        </table>
+
+        <script>
+            //define some constants to identify the 4 indicator lights
+            const INDICATOR_MUTE = 1;
+            const INDICATOR_QD = 2;
+            const INDICATOR_ONCALL = 3;
+            const INDICATOR_CROSSTALK = 4;
+
+            // Create a PubNub object to receive Plantronics Realtime events
+            // Use the publish/subscribe keys corresponding to your tenant
+            // (this example using Sandbox tenant)
+            pubnub = new PubNub({
+                publishKey: 'pub-c-b76af99a-918a-47ce-9f1c-2b317022ad8f',
+                subscribeKey: 'sub-c-7ae1fef8-6bde-11e7-8db3-0619f8945a4f',
+                ssl: true
+            });
+
+            // Add a listener to receive the PubNub messages and statuses
+            // Append inbound messages to log on screen then process them
+            pubnub.addListener({
+                status: function (statusEvent) {
+                    if (statusEvent.category === "PNConnectedCategory") {
+                        appendStreamingAPILog("PNConnectedCategory!");
+                    }
+                },
+                message: function (message) {
+                    var deviceIdFilter = document.getElementById("deviceIdSelect").value;
+
+                    addToFilterIfNotExist(message.message.deviceId);
+
+                    if (deviceIdFilter != "" && deviceIdFilter != "[choose a device id to filter on]") {
+                        if (deviceIdFilter.includes(message.message.deviceId)) {
+                            appendStreamingAPILog("&gt;&gt; New realtime Message from my device! (" + message.message.deviceId + ")");
+                            processRealtimeMessage(message);
+                        } else {
+                            // commenting out intentionally, so as not to spam user with everyone elses messages
+                            //appendStreamingAPILog("&gt;&gt; New realtime Message NOT from my device! Ignoring. (From: " + message.message.deviceId + ", My device = " + deviceIdFilter + ")");
+                        }
+                    } else {
+                        appendStreamingAPILog("&gt;&gt; No device filter selected. Ignoring message.");
+                    }
+                },
+                presence: function (presenceEvent) {
+                    // handle presence
+                }
+            });
+
+            // Subscribe to the 4 PubNub channels corresponding to the realtime app on your tenant
+            // (this example using an app already created on Sandbox)
+            appendStreamingAPILog("Subscribing..");
+            pubnub.subscribe({
+                channels: ['af0813e6-81c0-4a77-89d2-3338d0277c42_pub1',
+                    'af0813e6-81c0-4a77-89d2-3338d0277c42_pub2',
+                    'af0813e6-81c0-4a77-89d2-3338d0277c42_pub3',
+                    'af0813e6-81c0-4a77-89d2-3338d0277c42_pub4'
+                ]
+            });
+
+            // Process the incoming Plantronics realtime message
+            // Exercise #1, use the incoming message to turn on/off the QD, CALL and CROSSTALK
+            // indicator lights on the screen!
+            // List of indicator numbers: INDICATOR_MUTE, INDICATOR_QD, INDICATOR_ONCALL,
+            // INDICATOR_CROSSTALK. Use the setIndicatorLight function, passing indicator
+            // number and active (true or false) to turn the indicator on or off.
+            function processRealtimeMessage(message) {
+                if (message.message.eventType == 'HS_STATE_CHANGE_MUTE_ON') {
+                    appendStreamingAPILog("<b>&gt;&gt; Mute</b>");
+                    setIndicatorLight(INDICATOR_MUTE, true); // turn on mute indicator
+                }
+                else if (message.message.eventType == 'HS_STATE_CHANGE_MUTE_OFF') {
+                    appendStreamingAPILog("<b>&gt;&gt; not Mute</b>");
+                    setIndicatorLight(INDICATOR_MUTE, false); // turn off mute indicator
+                }
+                else if (message.message.eventType == 'HS_STATE_CHANGE_QD_CONNECTED') {
+                    appendStreamingAPILog("<b>&gt;&gt; QD connected</b>");
+                    // TODO: turn on QD indicator
+                }
+                else if (message.message.eventType == 'HS_STATE_CHANGE_QD_DISCONNECTED') {
+                    appendStreamingAPILog("<b>&gt;&gt; QD disconnected</b>");
+                    // TODO: turn off QD indicator
+                }
+                else {
+                    appendStreamingAPILog("<b>&gt;&gt; " + message.message.eventType + "</b>");
+                    if (message.message.eventType == "CD_EVENT") {
+                        var overTalk = message.message.CD_EVENT["overTalk"];
+                        if (overTalk > 0) {
+                            appendStreamingAPILog("<b>&gt;&gt; OverTalk = " + message.message.CD_EVENT["overTalk"] + "</b>");
+                            if (overTalk > 200) {
+                                // TODO: turn on Cross talk indicator
+                            }
+                            else {
+                                // TODO: turn off Cross talk indicator
+                            }
+                        }
+                    }
+                    else if (message.message.eventType == "CALL_EVENT") {
+                        var name = message.message.CALL_EVENT["name"];
+                        if (name == "inProgress") {
+                            appendStreamingAPILog("<b>&gt;&gt; Call in progress</b>");
+                            // TODO: turn on Call indicator
+                        }
+                        else {
+                            appendStreamingAPILog("<b>&gt;&gt; Call ended</b>");
+                            // TODO: turn off Call indicator
+                            // ALSO TODO: turn off Cross talk indicator
+                        }
+                    }
+                }
+            }
+
+            // Convenience function to turn on and off the require indicator light.
+            // List of indicator numbers: INDICATOR_MUTE, INDICATOR_QD, INDICATOR_ONCALL,
+            // INDICATOR_CROSSTALK. Use the setIndicatorLight function, passing indicator
+            // number and active (true or false) to turn the indicator on or off.
+            function setIndicatorLight(indicator, active) {
+                var indicatorLight = undefined;
+                switch (indicator) {
+                    case INDICATOR_MUTE:
+                        indicatorLight = document.getElementById("muteLight");
+                        break;
+                    case INDICATOR_QD:
+                        indicatorLight = document.getElementById("qdLight");
+                        break;
+                    case INDICATOR_ONCALL:
+                        indicatorLight = document.getElementById("callLight");
+                        break;
+                    case INDICATOR_CROSSTALK:
+                        indicatorLight = document.getElementById("crossTalkLight");
+                        break;
+                    default:
+                        appendStreamingAPILog("Warning, attempt to set invalid indicator: " + indicator);
+                }
+                if (indicator === undefined) {
+                    appendStreamingAPILog("Warning, indicator undefined: " + indicator);
+                }
+                else {
+                    // ok, lets go ahead and set the indicator active (red) or inactive (green)
+                    if (active) {
+                        indicatorLight.style.backgroundColor = "red";
+                    }
+                    else {
+                        indicatorLight.style.backgroundColor = "lightgreen";
+                    }
+                }
+            }
+
+            // Convenience function to see if Device ID filter contains the passed deviceId
+            function checkIfDeviceFilterContains(deviceId) {
+                var inFilter = false;
+                for (i = 0; i < document.getElementById("deviceIdSelect").length; ++i) {
+                    if (document.getElementById("deviceIdSelect").options[i].value.includes(deviceId)) {
+                        inFilter = true;
+                        break;
+                    }
+                }
+                return inFilter;
+            }
+
+            // Convenience function to add Device ID to filter if it does not contain the passed deviceId
+            function addToFilterIfNotExist(deviceId) {
+                if (!checkIfDeviceFilterContains(deviceId)) {
+                    appendStreamingAPILog(deviceId + " adding to device id filter selector");
+                    var devInfo = LookupDeviceInPMPByID(deviceId);
+                    if (devInfo.length > 0) {
+                        deviceId = devInfo; // use the info discovered by REST API query, if any
+                    }
+                    else {
+                        deviceId = deviceId + ", no REST API info";
+                    }
+                    var select = document.getElementById('deviceIdSelect');
+                    var opt = document.createElement('option');
+                    opt.value = deviceId;
+                    opt.innerHTML = deviceId;
+                    select.appendChild(opt);
+                }
+            }
+
+            // Convenience jQuery function to clear the log area of screen
+            $('#clear_streamingapi_log').click(function () {
+                streamingapilog.innerHTML = "";
+            });
+
+            // Convenience function to get the local timestamp
+            function getTime() {
+                var d = new Date();
+                var n = d.toLocaleTimeString();
+                return n;
+            }
+
+            // Convenience function to append a line to log area of screen
+            function appendStreamingAPILog(str) {
+                //streamingapilog.innerHTML = streamingapilog.innerHTML + "<br />" + getTime() + " " + str;
+                streamingapilog.innerHTML = getTime() + " " + str + "<br />" + streamingapilog.innerHTML;
+            }
+
+            // Convenience function that illustrates how to invoke the Plantronics Manager Pro REST APIs
+            // In this case it queries the device by device ID, using this method (see this URL for full details):
+            // http://developer.plantronics.com/oda/apis/get/reports/assets/tenant/%7BtenantApiCode%7D/device/%7BdeviceId%7D
+            function LookupDeviceInPMPByID(id) {
+                var retval = "";
+                var data = "ajax failed";
+
+                console.log("Do request");
+
+                $.ajax({
+                    method: "GET",
+                    headers: {
+                        "appId": "a7bbeaaf-4225-4d3e-ac63-19789a13b845"
+                    },
+                    url: "https://oda-sandbox.plantronicsmanager.com/reports/assets/tenant/af0813e6-81c0-4a77-89d2-3338d0277c42/device/" +
+                    id +
+                    "?apikey=1hKMMPFMmaldnC0rcohvXN0UX7UeWPjb",
+                    async: false,
+                    success: function (result) {
+                        data = result;
+                    },
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+                        data = "Status: " + textStatus +
+                            "Error: " + errorThrown +
+                            "Message: " + XMLHttpRequest.responseText;
+                    }
+                });
+
+                console.log("Done request");
+
+                $(function () {
+                    try {
+                        retval = data.lastSeen.username + " " + data.product.name + ", host " + data.lastSeen.hostname + ", id = " + id;
+
+                        appendStreamingAPILog("New device seen: " + retval);
+                    }
+                    catch (err) {
+                        appendStreamingAPILog("Error querying device id via REST API " + id + ", error = " + err);
+                        retval = "";
+                    }
+                });
+                return retval;
+            }
+        </script>
+    </font>
+</body>
+</html>
