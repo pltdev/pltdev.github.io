@@ -15,5 +15,5 @@ It allows you to experience a variety of interactions with your headset and lear
 9. Select your device in the Device ID filter: field. Note: all other sandbox users sending messages will get added here. By filtering for yours you can just focus on the events from your device.
 10. Exercise UC client calls, QD Quickdisconnect, Mute and finally crosstalk (try talking over the remote party)
 
-Coding workshop exercise: https://jsfiddle.net/lewiscollins/jc04jpv2/
+**Coding workshop exercise:** https://jsfiddle.net/lewiscollins/jc04jpv2/
 The exercise is to enable the qd, call and cross talk indicator lights (see inline comments).
