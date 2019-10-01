@@ -17,7 +17,7 @@ $.ajax({
   type: 'GET',
 
   // The URL to make the request to.
-  url: 'http://10.64.10.39/api/v1/mgmt/network/info',
+  url: 'https://10.64.10.39/api/v1/mgmt/network/info',
 
 	beforeSend: function (xhr) {
     xhr.setRequestHeader ("Authorization", "Basic " + btoa('Polycom' + ":" + '789'));
@@ -63,7 +63,7 @@ $.ajax({
 		</script>		
 		<h2>Poly Demo Apps</h2>
 		<ul>
-		<li><button onclick="alert('don\'t click me again!');">Click me</button>
+		<li><button onclick="alert('don\'t click me again!');">Click me2</button>
 		</ul>
 		
 		<h3>Output:</h3>
