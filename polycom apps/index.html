@@ -12,7 +12,7 @@
 function doQuery()
 {
 	const request = new XMLHttpRequest();
-	request.open('GET', 'http://10.64.10.39/api/v1/mgmt/network/info', false, 'Polycom','789')
+	request.open('GET', 'https://10.64.10.39/api/v1/mgmt/network/info', false, 'Polycom','789')
 	request.onreadystatechange = function() {
 			// D some business logics here if you receive return
 	   if(request.readyState === 4 && request.status === 200) {
@@ -25,7 +25,7 @@ function doQuery()
 		<h2>Poly Demo Apps</h2>
 		<ul>
 		<li><button onclick="alert('don\'t click me again!');">Click me</button>
-		<li><button onclick="doQuery();">REST TEST</button>
+		<li><button onclick="doQuery();">REST TEST 2</button>
 		</ul>
 		
 		<h3>Output:</h3>
