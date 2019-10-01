@@ -8,14 +8,30 @@
 
 <body>
     <font face="Helvetica,Arial,sans-serif">
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
-        <!--<script src="https://pltdev.github.io/util.js"></script>-->
-        <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.4.15.1.js"></script>
-        <h2>Poly Demo Apps</h2>
+		<script>
+function doQuery()
+{
+	const request = new XMLHttpRequest();
+	request.open('GET', 'http://10.64.10.39/api/v1/mgmt/network/info', false, 'Polycom','789')
+	request.onreadystatechange = function() {
+			// D some business logics here if you receive return
+	   if(request.readyState === 4 && request.status === 200) {
+		   document.getElementById('output').innerHTML = request.responseText;
+	   }
+	}
+	request.send();
+}
+		</script>		
+		<h2>Poly Demo Apps</h2>
 		<ul>
-		<li><button onclick="alert('don\'t click me again!')">Click me</button>
+		<li><button onclick="alert('don\'t click me again!');">Click me</button>
+		<li><button onclick="doQuery();">REST TEST</button>
 		</ul>
-    </font>
+		
+		<h3>Output:</h3>
+		<p id="output">
+		</p>
+    </font>	
 </body>
 
 </html>
