@@ -10,7 +10,6 @@
     <font face="Helvetica,Arial,sans-serif">
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
 		<script>
-var auth = btoa('Polycom:789');
 $.ajax({
 
   // The 'type' property sets the HTTP method.
@@ -18,11 +17,11 @@ $.ajax({
   type: 'GET',
 
   // The URL to make the request to.
-  url: 'https://localhost/api/v1/mgmt/network/info',
+  url: 'http://10.64.10.39/api/v1/mgmt/network/info',
 
-	headers: {
-        "Authorization": "Basic " + auth
-    },
+	beforeSend: function (xhr) {
+    xhr.setRequestHeader ("Authorization", "Basic " + btoa('Polycom' + ":" + '789'));
+},
 	
   // The 'contentType' property sets the 'Content-Type' header.
   // The JQuery default for this property is
@@ -43,21 +42,28 @@ $.ajax({
 
   success: function(data, status, xhr) {
     // Here's where you handle a successful response.
-	document.getElementById('output').innerHTML = "rcv" + data;
+	document.getElementById('output').innerHTML = "rcv" + data;	
   },
 
-  error: function() {
+  error: function(request, status, error) {
     // Here's where you handle an error response.
     // Note that if the error was due to a CORS issue,
     // this function will still fire, but there won't be any additional
     // information about the error.
-  }
+	document.getElementById('output').innerHTML = "err2: " + "status: " + request.status + ", " + request.responseText;
+  },
+  
+      //complete: function(xhr, textStatus) {
+        //document.getElementById('output').innerHTML = "err: " + xhr.status;
+    //}, 
+	fail: function(data, textStatus, xhr) {
+		document.getElementById('output').innerHTML = "fail: " + xhr.status;
+	}
 });
 		</script>		
 		<h2>Poly Demo Apps</h2>
 		<ul>
 		<li><button onclick="alert('don\'t click me again!');">Click me</button>
-		<li><button onclick="alert('noop')">REST TEST 3</button>
 		</ul>
 		
 		<h3>Output:</h3>
